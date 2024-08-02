@@ -1,0 +1,80 @@
+﻿﻿Para desenvolver um CRUD (Create, Read, Update e Delete) em GoLang com o uso de uma API REST e PostgreSQL como banco de dados, você pode seguir os passos abaixo:
+1. Instalando as dependências:
+2. 
+---------------------------------------------
+| |
+---------------------------------------------
+| |
+---------------------------------------------
+| |go | | | | |
+---------------------------------------------
+| |
+---------------------------------------------
+| |go get -u github.com/gin-gonic/gin |go get -u github.com/jinzhu/gorm |go get -u github.com/jinzhu/gorm/dialects/postgres | | | | |
+
+1. Criando a estrutura do modelo:
+2. 
+---------------------------------------------
+| |
+---------------------------------------------
+| |
+---------------------------------------------
+| |go | | | | |
+---------------------------------------------
+| |
+---------------------------------------------
+| |package main | |import ( |	"github.com/jinzhu/gorm" |) | |type User struct { |	ID       uint   `json:"id"` |	Name     string `json:"name"` |	Email    string `json:"email"` |} | | | | |
+
+1. Criando a conexão com o PostgreSQL:
+2. 
+---------------------------------------------
+| |
+---------------------------------------------
+| |
+---------------------------------------------
+| |go | | | | |
+---------------------------------------------
+| |
+---------------------------------------------
+| |package main | |import ( |	"github.com/gin-gonic/gin" |	_ "github.com/jinzhu/gorm/dialects/postgres" |) | |var db *gorm.DB |var err error | |func connect() { |	db, err = gorm.Open("postgres", "<username>:<password>@tcp(127.0.0.1:5432)/<database>") |	if err != nil { |		panic("Failed to connect to the database!") |	} |} | | | | |
+
+1. Criando os métodos CRUD:
+2. 
+---------------------------------------------
+| |
+---------------------------------------------
+| |
+---------------------------------------------
+| |go | | | | |
+---------------------------------------------
+| |
+---------------------------------------------
+| |func createUser(c *gin.Context) { |	var user User |	c.BindJSON(&user) | |	db.Create(&user) |	c.JSON(200, gin.H{"message": "User created"}) |} | |func getUsers(c *gin.Context) { |	var users []User |	if err := db.Find(&users).Error; err != nil { |		c.AbortWithStatus(404) |	} else { |		c.JSON(200, gin.H{"message": "Users found", "data": users}) |	} |} | |func getUser(c *gin.Context) { |	id := c.Params.ByName("id") |	var user User |	if err := db.Where("id = ?", id).First(&user).Error; err != nil { |		c.AbortWithStatus(404) |	} else { |		c.JSON(200, gin.H{"message": "User found", "data": user}) |	} |} | |func updateUser(c *gin.Context) { |	var user User |	id := c.Params.ByName("id") | |	if err := db.Where("id = ?", id).First(&user).Error; err != nil { |		c.AbortWithStatus(404) |	} else { |		db.Model(&user).Updates(User{Name: c.PostFormValue("name"), Email: c.PostFormValue("email")}) |		c.JSON(200, gin.H{"message": "User updated"}) |	} |} | |func deleteUser(c *gin.Context) { |	id := c.Params.ByName("id") |	var user User | |	if err := db.Where("id = ?", id).Delete(&user).Error; err != nil { |		c.AbortWithStatus(404) |	} else { |		c.JSON(200, gin.H{"message": "User deleted"}) |	} |} | | | | |
+
+1. Criando a rota do serviço REST:
+2. 
+---------------------------------------------
+| |
+---------------------------------------------
+| |
+---------------------------------------------
+| |go | | | | |
+---------------------------------------------
+| |
+---------------------------------------------
+| |func main() { |	connect() |	defer db.Close() | |	r := gin.Default() | |	r.POST("/users", createUser) |	r.GET("/users", getUsers) |	r.GET("/users/:id", getUser) |	r.PUT("/users/:id", updateUser) |	r.DELETE("/users/:id", deleteUser) | |	r.Run(":8080") |} | | | | |
+
+1. Executando o serviço REST:
+2. 
+---------------------------------------------
+| |
+---------------------------------------------
+| |
+---------------------------------------------
+| |bash | | | | |
+---------------------------------------------
+| |
+---------------------------------------------
+| |go run main.go | | | | |
+Você agora tem um CRUD em GoLang com API REST e PostgreSQL como banco de dados. Você pode testar as rotas utilizando ferramentas como curl, Postman ou outros clientes HTTP.
+

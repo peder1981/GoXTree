@@ -1,0 +1,9 @@
+{
+    "go.goroot": "/usr/local/go",
+    "go.toolsEnvVars": {
+    
+    },
+    "go.alternateTools": {
+
+    }
+}
