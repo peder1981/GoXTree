@@ -35,14 +35,14 @@ func main() {
 	}
 
 	var valor string
-	fmt.Print("Insira um valor monetário: ")
+	fmt.Print("Faça sua pergunta ao gpt-4o-mini: ")
 	fmt.Scanln(&valor)
 
 	requestBody, err := json.Marshal(GPTRequest{
 		Messages: []GPTMessage{
-			{Role: "user", Content: fmt.Sprintf("Escreva o valor %s por extenso.", valor)},
+			{Role: "user", Content: fmt.Sprintf("%s", valor)},
 		},
-		Model: "gpt-3.5-turbo",
+		Model: "gpt-4o-mini",
 	})
 	if err != nil {
 		fmt.Printf("Erro ao criar a requisição: %v\n", err)
@@ -80,7 +80,7 @@ func main() {
 	}
 
 	if len(gptResponse.Choices) > 0 {
-		fmt.Printf("Valor por extenso: %s\n", gptResponse.Choices[0].Message.Content)
+		fmt.Printf("Eis aqui sua resposta: %s\n", gptResponse.Choices[0].Message.Content)
 	} else {
 		fmt.Println("Nenhuma resposta encontrada.")
 	}

@@ -5,5 +5,6 @@
     },
     "go.alternateTools": {
 
-    }
+    },
+    "go.useLanguageServer": false
 }
