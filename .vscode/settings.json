@@ -1,5 +1,5 @@
 {
-    "go.goroot": "/usr/local/go",
+    "go.goroot": "/home/peder/sdk/go1.22.5",
     "go.toolsEnvVars": {
     
     },
