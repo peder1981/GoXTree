@@ -1,0 +1,2 @@
+Nosso mini erp, terá como premissa ser: multi plataforma, leve, rápido e portátil.
+O mini erp, deverá ser escrito em GoLang e utilizará como banco de dados o whitedb dada a sua fluides quanto ao armazenamento de dados e deverá ocorrer de maneira persistente em disco. 

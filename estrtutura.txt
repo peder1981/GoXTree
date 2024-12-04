@@ -1,0 +1,25 @@
+mini-erp/
+├── main.go                # Arquivo principal para execução do sistema
+├── database/
+│   ├── database.go        # Funções relacionadas ao banco de dados
+│   ├── migrations.go      # Criação e estruturação das tabelas
+├── cloud/
+│   ├── cloud.go           # Funções para sincronização com a nuvem
+│   ├── google_drive.go    # Integração com Google Drive
+│   ├── onedrive.go        # Integração com OneDrive
+│   ├── dropbox.go         # Integração com Dropbox
+├── modules/
+│   ├── clients.go         # CRUD de clientes
+│   ├── suppliers.go       # CRUD de fornecedores
+│   ├── products.go        # CRUD de produtos
+│   ├── accounts.go        # Contas a pagar e a receber
+├── utils/
+│   ├── cpf.go             # Validação de CPF
+│   ├── email.go           # Envio de e-mails
+│   ├── cep.go             # Busca de endereço pelo CEP
+├── static/
+│   ├── index.html         # Interface web para o sistema
+│   ├── styles.css         # Estilos para a interface
+│   ├── scripts.js         # Scripts para interação
+├── README.md              # Instruções detalhadas para instalação e uso
+└── summary.txt            # Resumo do projeto e próximos passos

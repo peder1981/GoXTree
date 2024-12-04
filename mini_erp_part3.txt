@@ -1,0 +1,3 @@
+Deveremos desenvolver a possibilidade de sincronização em nuvem, com a possibilidade de o usuário escolher entre: OneDrive, Google Drive ou Dropbox para gravação dos dados persistentes bem como o backup dos dados em caso problemas de memória.
+O mini erp deverá possuir uma tela de login em que será permitido o usuário se cadastrar mediante o preenchimento das seguintes informações e posteriormente fazendo a confirmação automática via e-mail de seu cadastro: Nome Completo, Data de Nascimento, CEP (se possível utilizar algum serviço gratuito de busca de endereços a partir do CEP para completar o restante dos dados do endereço completo), endereço completo e CPF (validar o digito verificador em de acordo com as regras do órgão emissor do documento naquele país) e país.
+

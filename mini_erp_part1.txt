@@ -1,0 +1,1 @@
+Vou descrever um rascunho sobre a ideia do nosso sistema, linguagem a ser utilizada e também o banco de dados escolhido.
