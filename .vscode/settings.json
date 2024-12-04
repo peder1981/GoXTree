@@ -6,5 +6,6 @@
     "go.alternateTools": {
 
     },
-    "go.useLanguageServer": false
+    "go.useLanguageServer": false,
+    "git.allowForcePush": false
 }
