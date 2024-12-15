@@ -1,2 +1,3 @@
 Nosso mini erp, terá como premissa ser: multi plataforma, leve, rápido e portátil.
-O mini erp, deverá ser escrito em GoLang e utilizará como banco de dados o whitedb dada a sua fluides quanto ao armazenamento de dados e deverá ocorrer de maneira persistente em disco. 
+O mini erp, deverá ser escrito em python e utilizará como banco de dados o sqlite3. Para que nosso erp seja multiplataforma os arquivos .db deverão 
+ter a possibilidade de serem salvos na nuvem utilizando ou Onedrive, ou Gmail ou Dropbox.

@@ -1,2 +1,12 @@
 Uma vez cadastrado e com seu e-mail devidamente validado, nosso mini erp deverá criar um banco de dados formado pelo número de CPF do usuário de forma a não haver repetição de bases de dados ou usuários. Esse banco deverá ser a cada operação salvo em disco e em caso de vinculação de conta no OneDrive, Google Drive ou DropBox, espelhado em uma dessas operadoras de armazenamento de dados.
 Nosso mini erp terá inicialmente os seguintes cadastros: Clientes, Fornecedores, Produtos. Estes três cadastros, deverão possibilitar nosso usuário a controlarem as seguintes operações: Contas a Receber de Clientes, Contas a Pagar para Fornecedores e em ambos deverá ser vinculado o Produto de Produtos utilizado na compra ou venda gerando assim um controle de estoque dos Produtos. Serviços também são produtos em que não se controla Estoque.
+
+
+Crie a estrutura física dos diretórios e salve cada um dos arquivos envolvidos em seu respectivo diretorio.
+
+
+https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados?formato=json&dataInicial=10/03/2022&dataFinal=11/03/2022
+
+
+PA7_ORIGEM = 'RTC'
+
