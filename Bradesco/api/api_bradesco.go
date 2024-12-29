@@ -224,6 +224,6 @@ func main() {
 	http.HandleFunc("/v1/spi/solicitar-transferencia", handlePixTransfer)
 	http.HandleFunc("/oauth/token", handleOAuthToken)
 
-	fmt.Println("Server listening on port 8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	fmt.Println("Server listening on port 9090")
+	log.Fatal(http.ListenAndServe(":9090", nil))
 }
