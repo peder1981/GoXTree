@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"time"
+	"crypto/rand"
+	"encoding/hex"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -123,7 +125,7 @@ func insertData(db *sql.DB, data PixTransferRequest) {
 		data.Descricao,
 		time.Now().Format("2006-01-02T15:04:05.999Z"),
 		"CONCLUIDO",
-		"0.90",
+		"0.00",
 		"Transação realizada com sucesso",
 	)
 	if err != nil {
@@ -148,6 +150,8 @@ func handlePixTransfer(w http.ResponseWriter, r *http.Request) {
 
 	createTable(db)
 	insertData(db, transferRequest)
+	
+	uuid, err := generateUUIDV4()
 
 	transferResponse := PixTransferResponse{
 		Pagador: struct {
@@ -173,12 +177,13 @@ func handlePixTransfer(w http.ResponseWriter, r *http.Request) {
 			NomeFavorecido: transferRequest.Recebedor.NomeFavorecido,
 		},
 		Valor:       transferRequest.Valor,
-		E2e:         "E60746948202211301715L2856oOXfn8",
+		//E2e:         "E60746948202211301715L2856oOXfn8",
+		E2e:         uuid,
 		IdTransacao: transferRequest.IdTransacao,
 		Descricao:   transferRequest.Descricao,
 		DataCriacao: time.Now().Format("2006-01-02T15:04:05.999Z"),
 		Status:      "CONCLUIDO",
-		ValorTarifa: "0.90",
+		ValorTarifa: "0.00",
 		Motivo:      "Transação realizada com sucesso",
 	}
 
@@ -220,10 +225,47 @@ func handleOAuthToken(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func generateUUIDV4() (string, error) {
+	uuid := make([]byte, 16)
+	_, err := rand.Read(uuid)
+	if err != nil {
+		return "", err
+	}
+
+	uuid[6] = (uuid[6] & 0x0f) | 0x40
+	uuid[8] = (uuid[8] & 0x3f) | 0x80
+
+	return hex.EncodeToString(uuid), nil
+}
+
 func main() {
+	fmt.Println("Iniciando servidor...")
+	
 	http.HandleFunc("/v1/spi/solicitar-transferencia", handlePixTransfer)
 	http.HandleFunc("/oauth/token", handleOAuthToken)
 
-	fmt.Println("Server listening on port 9090")
-	log.Fatal(http.ListenAndServe(":9090", nil))
+	// Canal para sincronização de erros
+	errChan := make(chan error, 2)
+
+	// Iniciar servidor HTTP em uma goroutine
+	go func() {
+		fmt.Println("Iniciando servidor HTTP na porta 9090...")
+		if err := http.ListenAndServe(":9090", nil); err != nil {
+			fmt.Printf("Erro ao iniciar servidor HTTP: %v\n", err)
+			errChan <- err
+		}
+	}()
+
+	// Iniciar servidor HTTPS em outra goroutine
+	go func() {
+		fmt.Println("Iniciando servidor HTTPS na porta 9093...")
+		if err := http.ListenAndServeTLS(":9093", "server.crt", "server.key", nil); err != nil {
+			fmt.Printf("Erro ao iniciar servidor HTTPS: %v\n", err)
+			errChan <- err
+		}
+	}()
+
+	// Aguardar por erros de qualquer um dos servidores
+	err := <-errChan
+	log.Fatal(err)
 }
