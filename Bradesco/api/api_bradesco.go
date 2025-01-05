@@ -151,7 +151,7 @@ func handlePixTransfer(w http.ResponseWriter, r *http.Request) {
 	createTable(db)
 	insertData(db, transferRequest)
 
-	uuid, err := generateUUIDV4()
+	uuid, err := generateUUIDV4X()
 
 	transferResponse := PixTransferResponse{
 		Pagador: struct {
@@ -225,7 +225,7 @@ func handleOAuthToken(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func generateUUIDV4() (string, error) {
+func generateUUIDV4X() (string, error) {
 	uuid := make([]byte, 16)
 	_, err := rand.Read(uuid)
 	if err != nil {
