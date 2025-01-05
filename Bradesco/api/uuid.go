@@ -1,7 +1,10 @@
+package main
+
 import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"log"
 )
 
 func generateUUIDV4() (string, error) {
@@ -15,4 +18,12 @@ func generateUUIDV4() (string, error) {
 	uuid[8] = (uuid[8] & 0x3f) | 0x80
 
 	return hex.EncodeToString(uuid), nil
+}
+
+func main() {
+	uuid, err := generateUUIDV4()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Generated UUID: %s\n", uuid)
 }

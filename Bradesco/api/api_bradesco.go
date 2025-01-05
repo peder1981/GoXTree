@@ -1,14 +1,14 @@
 package main
 
 import (
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"time"
-	"crypto/rand"
-	"encoding/hex"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -150,7 +150,7 @@ func handlePixTransfer(w http.ResponseWriter, r *http.Request) {
 
 	createTable(db)
 	insertData(db, transferRequest)
-	
+
 	uuid, err := generateUUIDV4()
 
 	transferResponse := PixTransferResponse{
@@ -176,7 +176,7 @@ func handlePixTransfer(w http.ResponseWriter, r *http.Request) {
 			ChavePix:       transferRequest.Recebedor.ChavePix,
 			NomeFavorecido: transferRequest.Recebedor.NomeFavorecido,
 		},
-		Valor:       transferRequest.Valor,
+		Valor: transferRequest.Valor,
 		//E2e:         "E60746948202211301715L2856oOXfn8",
 		E2e:         uuid,
 		IdTransacao: transferRequest.IdTransacao,
@@ -240,7 +240,7 @@ func generateUUIDV4() (string, error) {
 
 func main() {
 	fmt.Println("Iniciando servidor...")
-	
+
 	http.HandleFunc("/v1/spi/solicitar-transferencia", handlePixTransfer)
 	http.HandleFunc("/oauth/token", handleOAuthToken)
 
