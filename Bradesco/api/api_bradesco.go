@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"time"
 
@@ -124,7 +125,12 @@ func insertData(db *sql.DB, data PixTransferRequest) {
 		data.Valor,
 		data.Descricao,
 		time.Now().Format("2006-01-02T15:04:05.999Z"),
-		"CONCLUIDO",
+		func() string {
+			if rand.Float32() < 0.5 {
+				return "CONCLUIDO"
+			}
+			return "EM_PROCESSAMENTO"
+		}(),
 		"0.00",
 		"Transação realizada com sucesso",
 	)
@@ -182,7 +188,12 @@ func handlePixTransfer(w http.ResponseWriter, r *http.Request) {
 		IdTransacao: transferRequest.IdTransacao,
 		Descricao:   transferRequest.Descricao,
 		DataCriacao: time.Now().Format("2006-01-02T15:04:05.999Z"),
-		Status:      "CONCLUIDO",
+		Status: func() string {
+			if rand.Float32() < 0.5 {
+				return "CONCLUIDO"
+			}
+			return "EM_PROCESSAMENTO"
+		}(),
 		ValorTarifa: "0.00",
 		Motivo:      "Transação realizada com sucesso",
 	}
