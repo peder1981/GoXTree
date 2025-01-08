@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand"
 	"net/http"
 	"strings"
 	"time"
@@ -63,13 +62,29 @@ type Token struct {
 }
 
 func init() {
-	rand.Seed(time.Now().UnixNano())
+	// Removing rand.Seed as it's not needed with crypto/rand
 }
 
-func createTable(db *sql.DB) {
+func openDB() (*sql.DB, error) {
+	db, err := sql.Open("sqlite3", "../interface/pix.db?_timeout=5000&_journal_mode=WAL&_busy_timeout=5000")
+	if err != nil {
+		return nil, err
+	}
+
+	// Set connection pool settings
+	db.SetMaxOpenConns(1)
+	db.SetMaxIdleConns(1)
+	db.SetConnMaxLifetime(time.Hour)
+
+	return db, nil
+}
+
+func createTable(db *sql.DB) error {
 	_, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS pix_transfers (
 			id INTEGER PRIMARY KEY,
+			id_transacao TEXT,
+			e2e TEXT,
 			pagador_chave_pix TEXT,
 			pagador_agencia TEXT,
 			pagador_conta TEXT,
@@ -86,7 +101,7 @@ func createTable(db *sql.DB) {
 		);
 	`)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	_, err = db.Exec(`
@@ -97,13 +112,20 @@ func createTable(db *sql.DB) {
 			token TEXT
 		);
 	`)
-	if err != nil {
-		log.Fatal(err)
-	}
+	return err
 }
 
 func getRandomStatus() string {
-	if rand.Float32() < 0.5 {
+	// Using crypto/rand instead of math/rand
+	b := make([]byte, 1)
+	_, err := rand.Read(b)
+	if err != nil {
+		// In case of error, default to CONCLUIDO
+		return "CONCLUIDO"
+	}
+
+	// If the byte is even, return CONCLUIDO, if odd return EM_PROCESSAMENTO
+	if b[0]%2 == 0 {
 		return "CONCLUIDO"
 	}
 	return "EM_PROCESSAMENTO"
@@ -116,10 +138,12 @@ func getMotivo(status string) string {
 	return "Transação em processamento"
 }
 
-func insertData(db *sql.DB, data PixTransferRequest) string {
+func insertData(db *sql.DB, data PixTransferRequest, e2e string) string {
 	status := getRandomStatus()
 	_, err := db.Exec(`
 		INSERT INTO pix_transfers (
+			id_transacao,
+			e2e,
 			pagador_chave_pix,
 			pagador_agencia,
 			pagador_conta,
@@ -133,8 +157,10 @@ func insertData(db *sql.DB, data PixTransferRequest) string {
 			status,
 			valor_tarifa,
 			motivo
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 	`,
+		data.IdTransacao,
+		e2e,
 		data.Pagador.ChavePix,
 		data.Pagador.Agencia,
 		data.Pagador.Conta,
@@ -163,17 +189,34 @@ func handlePixTransfer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, err := sql.Open("sqlite3", "../interface/pix.db")
+	uuid, err := generateUUIDV4X()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	if transferRequest.IdTransacao == "" {
+		transferRequest.IdTransacao, err = generateUUIDV4X()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	db, err := openDB()
+	if err != nil {
+		http.Error(w, "Database connection error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 	defer db.Close()
 
-	createTable(db)
-	status := insertData(db, transferRequest)
+	err = createTable(db)
+	if err != nil {
+		http.Error(w, "Table creation error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	uuid, err := generateUUIDV4X()
+	status := insertData(db, transferRequest, uuid)
 
 	transferResponse := PixTransferResponse{
 		Pagador: struct {
@@ -218,7 +261,6 @@ func handleGetPixTransfer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Extract path parameters
 	path := r.URL.Path
 	parts := strings.Split(path, "/")
 	if len(parts) != 7 {
@@ -234,38 +276,45 @@ func handleGetPixTransfer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, err := sql.Open("sqlite3", "../interface/pix.db")
+	db, err := openDB()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Database connection error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer db.Close()
+
+	tx, err := db.Begin()
+	if err != nil {
+		http.Error(w, "Transaction start error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback() // Will rollback if not committed
 
 	var transfer PixTransferResponse
 	var rows *sql.Rows
 
 	if idTransacao != "" {
-		rows, err = db.Query(`
+		rows, err = tx.Query(`
             SELECT 
                 pagador_chave_pix, pagador_agencia, pagador_conta,
                 recebedor_cpf_cnpj, recebedor_tipo_chave, recebedor_chave_pix, recebedor_nome_favorecido,
-                valor, descricao, data_criacao, status, valor_tarifa, motivo
+                valor, descricao, data_criacao, status, valor_tarifa, motivo, id_transacao, e2e
             FROM pix_transfers 
             WHERE id_transacao = ?
             ORDER BY id DESC LIMIT 1`, idTransacao)
 	} else {
-		rows, err = db.Query(`
+		rows, err = tx.Query(`
             SELECT 
                 pagador_chave_pix, pagador_agencia, pagador_conta,
                 recebedor_cpf_cnpj, recebedor_tipo_chave, recebedor_chave_pix, recebedor_nome_favorecido,
-                valor, descricao, data_criacao, status, valor_tarifa, motivo
+                valor, descricao, data_criacao, status, valor_tarifa, motivo, id_transacao, e2e
             FROM pix_transfers 
             WHERE e2e = ?
             ORDER BY id DESC LIMIT 1`, e2e)
 	}
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Query error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
@@ -279,25 +328,25 @@ func handleGetPixTransfer(w http.ResponseWriter, r *http.Request) {
 		pagadorChavePix, pagadorAgencia, pagadorConta                                    string
 		recebedorCpfCnpj, recebedorTipoChave, recebedorChavePix, recebedorNomeFavorecido string
 		valor, descricao, dataCriacao, status, valorTarifa, motivo                       string
+		dbIdTransacao, dbE2e                                                             string
 	)
 
 	err = rows.Scan(
 		&pagadorChavePix, &pagadorAgencia, &pagadorConta,
 		&recebedorCpfCnpj, &recebedorTipoChave, &recebedorChavePix, &recebedorNomeFavorecido,
 		&valor, &descricao, &dataCriacao, &status, &valorTarifa, &motivo,
+		&dbIdTransacao, &dbE2e,
 	)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Scan error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Se o status for "EM_PROCESSAMENTO", atualizamos para "CONCLUIDO"
 	if status == "EM_PROCESSAMENTO" {
 		status = "CONCLUIDO"
 		motivo = "Transação realizada com sucesso"
 
-		// Atualiza o status no banco de dados
-		_, err = db.Exec(`
+		_, err = tx.Exec(`
             UPDATE pix_transfers 
             SET status = ?, motivo = ? 
             WHERE id = (
@@ -305,12 +354,18 @@ func handleGetPixTransfer(w http.ResponseWriter, r *http.Request) {
                 WHERE id_transacao = ? OR e2e = ?
                 ORDER BY id DESC LIMIT 1
             )`,
-			status, motivo, idTransacao, e2e)
+			status, motivo, dbIdTransacao, dbE2e)
 
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Update error: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		http.Error(w, "Commit error: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	transfer = PixTransferResponse{
@@ -337,8 +392,8 @@ func handleGetPixTransfer(w http.ResponseWriter, r *http.Request) {
 			NomeFavorecido: recebedorNomeFavorecido,
 		},
 		Valor:       valor,
-		E2e:         e2e,
-		IdTransacao: idTransacao,
+		E2e:         dbE2e,
+		IdTransacao: dbIdTransacao,
 		Descricao:   descricao,
 		DataCriacao: dataCriacao,
 		Status:      status,
@@ -359,7 +414,7 @@ func handleOAuthToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, err := sql.Open("sqlite3", "../interface/pix.db")
+	db, err := openDB()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -391,10 +446,12 @@ func generateUUIDV4X() (string, error) {
 		return "", err
 	}
 
+	// Set version (4) and variant (2) bits
 	uuid[6] = (uuid[6] & 0x0f) | 0x40
 	uuid[8] = (uuid[8] & 0x3f) | 0x80
 
-	return hex.EncodeToString(uuid), nil
+	// Convert to hex string without hyphens
+	return strings.ToUpper(hex.EncodeToString(uuid)), nil
 }
 
 func main() {
@@ -404,10 +461,8 @@ func main() {
 	http.HandleFunc("/v1/spi/consulta/transferencia/", handleGetPixTransfer)
 	http.HandleFunc("/oauth/token", handleOAuthToken)
 
-	// Canal para sincronização de erros
 	errChan := make(chan error, 2)
 
-	// Iniciar servidor HTTP em uma goroutine
 	go func() {
 		fmt.Println("Iniciando servidor HTTP na porta 9090...")
 		if err := http.ListenAndServe(":9090", nil); err != nil {
@@ -416,7 +471,6 @@ func main() {
 		}
 	}()
 
-	// Iniciar servidor HTTPS em outra goroutine
 	go func() {
 		fmt.Println("Iniciando servidor HTTPS na porta 9093...")
 		if err := http.ListenAndServeTLS(":9093", "server.crt", "server.key", nil); err != nil {
@@ -425,7 +479,6 @@ func main() {
 		}
 	}()
 
-	// Aguardar por erros de qualquer um dos servidores
 	err := <-errChan
 	log.Fatal(err)
 }
