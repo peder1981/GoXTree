@@ -1,0 +1,53 @@
+# Binários compilados
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Arquivos de teste
+*.test
+*.out
+
+# Arquivos temporários
+*.tmp
+*.bak
+*.swp
+*~
+
+# Arquivos de log
+*.log
+
+# Diretório de dependências
+vendor/
+
+# Arquivos de configuração local
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*config.json
+*settings.json
+
+# Arquivos de IDE
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Arquivos de sistema operacional
+.DS_Store
+Thumbs.db
+
+# Arquivos de cobertura de testes
+coverage.txt
+profile.out
+
+# Arquivos de build
+build/
+dist/
+
+# Arquivos de cache do Go
+go.sum

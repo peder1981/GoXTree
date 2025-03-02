@@ -1,0 +1,95 @@
+name: Release GoXTree
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+          
+      - name: Build for all platforms
+        run: |
+          mkdir -p bin
+          # Linux AMD64
+          GOOS=linux GOARCH=amd64 go build -o bin/goxTree-linux-amd64 ./cmd/gxtree/main.go
+          # Linux ARM64
+          GOOS=linux GOARCH=arm64 go build -o bin/goxTree-linux-arm64 ./cmd/gxtree/main.go
+          # Windows AMD64
+          GOOS=windows GOARCH=amd64 go build -o bin/goxTree-windows-amd64.exe ./cmd/gxtree/main.go
+          # macOS AMD64
+          GOOS=darwin GOARCH=amd64 go build -o bin/goxTree-darwin-amd64 ./cmd/gxtree/main.go
+          # macOS ARM64
+          GOOS=darwin GOARCH=arm64 go build -o bin/goxTree-darwin-arm64 ./cmd/gxtree/main.go
+          
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: GoXTree ${{ github.ref_name }}
+          body_path: GITHUB_RELEASE.md
+          draft: false
+          prerelease: false
+          
+      - name: Upload Linux AMD64 Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./bin/goxTree-linux-amd64
+          asset_name: goxTree-linux-amd64
+          asset_content_type: application/octet-stream
+          
+      - name: Upload Linux ARM64 Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./bin/goxTree-linux-arm64
+          asset_name: goxTree-linux-arm64
+          asset_content_type: application/octet-stream
+          
+      - name: Upload Windows AMD64 Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./bin/goxTree-windows-amd64.exe
+          asset_name: goxTree-windows-amd64.exe
+          asset_content_type: application/octet-stream
+          
+      - name: Upload macOS AMD64 Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./bin/goxTree-darwin-amd64
+          asset_name: goxTree-darwin-amd64
+          asset_content_type: application/octet-stream
+          
+      - name: Upload macOS ARM64 Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./bin/goxTree-darwin-arm64
+          asset_name: goxTree-darwin-arm64
+          asset_content_type: application/octet-stream

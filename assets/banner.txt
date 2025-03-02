@@ -1,0 +1,10 @@
+  _____      __   _______ 
+ / ____|    /\ \ / /_   _|
+| |  __    /  \ V /  | |  
+| | |_ |  / /\ \ /   | |  
+| |__| | / ____ \ _ _| |_ 
+ \_____/_/    \_(_|_____|
+                         
+ Gerenciador de Arquivos Moderno
+ Inspirado no lendário XTree Gold
+ v1.0.0 - Março 2025
