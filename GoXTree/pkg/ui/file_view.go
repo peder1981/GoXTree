@@ -222,7 +222,7 @@ func (f *FileView) UpdateFileList(files []utils.FileInfo, showHidden bool) {
 			nameCell.SetTextColor(tcell.ColorWhite).
 				SetBackgroundColor(tcell.ColorDarkBlue)
 		} else {
-			nameCell.SetTextColor(GetFileColor(file.Name, file.IsDir, isHidden))
+			nameCell.SetTextColor(GetFileColorByExt(file.Name, file.IsDir, isHidden))
 		}
 		f.fileList.SetCell(row, 0, nameCell)
 
@@ -330,4 +330,155 @@ func (f *FileView) UnselectAll() {
 	
 	// Atualizar barra de status
 	f.app.statusBar.SetStatus("Seleção removida")
+}
+
+// InvertSelection inverte a seleção atual
+func (f *FileView) InvertSelection() {
+	if f.app.selectedFiles == nil {
+		f.app.selectedFiles = make(map[string]bool)
+	}
+	
+	// Obter lista de arquivos no diretório atual
+	files, err := os.ReadDir(f.currentDir)
+	if err != nil {
+		f.app.showError("Erro ao listar arquivos: " + err.Error())
+		return
+	}
+	
+	// Inverter seleção para cada arquivo
+	for _, file := range files {
+		if !file.IsDir() {
+			filePath := filepath.Join(f.currentDir, file.Name())
+			f.app.selectedFiles[filePath] = !f.app.selectedFiles[filePath]
+			
+			// Se o arquivo não estiver mais selecionado, remover do mapa
+			if !f.app.selectedFiles[filePath] {
+				delete(f.app.selectedFiles, filePath)
+			}
+		}
+	}
+	
+	// Atualizar visualização
+	f.app.updateFileList()
+	
+	// Atualizar barra de status
+	f.app.statusBar.SetStatus(fmt.Sprintf("%d arquivos selecionados", len(f.app.selectedFiles)))
+}
+
+// SelectByPattern seleciona arquivos que correspondam a um padrão
+func (f *FileView) SelectByPattern(pattern string) int {
+	if f.app.selectedFiles == nil {
+		f.app.selectedFiles = make(map[string]bool)
+	}
+	
+	// Obter lista de arquivos no diretório atual
+	files, err := os.ReadDir(f.currentDir)
+	if err != nil {
+		f.app.showError("Erro ao listar arquivos: " + err.Error())
+		return 0
+	}
+	
+	// Converter padrão para expressão regular
+	// Substituir * por .* e ? por .
+	regexPattern := strings.ReplaceAll(pattern, "*", ".*")
+	regexPattern = strings.ReplaceAll(regexPattern, "?", ".")
+	
+	// Contar quantos arquivos foram selecionados
+	count := 0
+	
+	// Selecionar arquivos que correspondam ao padrão
+	for _, file := range files {
+		if !file.IsDir() {
+			fileName := file.Name()
+			
+			// Verificar se o nome do arquivo corresponde ao padrão
+			match, err := filepath.Match(pattern, fileName)
+			if err == nil && match {
+				filePath := filepath.Join(f.currentDir, fileName)
+				f.app.selectedFiles[filePath] = true
+				count++
+			}
+		}
+	}
+	
+	// Atualizar visualização
+	f.app.updateFileList()
+	
+	return count
+}
+
+// SetSortBy define o critério de ordenação
+func (f *FileView) SetSortBy(sortBy string) {
+	// Atualizar a lista de arquivos com o novo critério de ordenação
+	files, err := utils.ListFiles(f.currentDir, f.app.showHidden)
+	if err != nil {
+		f.app.showError("Erro ao listar arquivos: " + err.Error())
+		return
+	}
+	
+	// Ordenar arquivos de acordo com o critério
+	switch sortBy {
+	case "name":
+		// Ordenar por nome (diretórios primeiro)
+		sort.Slice(files, func(i, j int) bool {
+			if files[i].IsDir != files[j].IsDir {
+				return files[i].IsDir
+			}
+			return strings.ToLower(files[i].Name) < strings.ToLower(files[j].Name)
+		})
+	case "date":
+		// Ordenar por data (diretórios primeiro)
+		sort.Slice(files, func(i, j int) bool {
+			if files[i].IsDir != files[j].IsDir {
+				return files[i].IsDir
+			}
+			return files[i].ModTime.After(files[j].ModTime)
+		})
+	case "size":
+		// Ordenar por tamanho (diretórios primeiro)
+		sort.Slice(files, func(i, j int) bool {
+			if files[i].IsDir != files[j].IsDir {
+				return files[i].IsDir
+			}
+			return files[i].Size > files[j].Size
+		})
+	}
+	
+	// Atualizar a visualização
+	f.UpdateFileList(files, f.app.showHidden)
+}
+
+// GetFileColorByExt retorna a cor apropriada para um arquivo
+func GetFileColorByExt(fileName string, isDir bool, isHidden bool) tcell.Color {
+	if isDir {
+		if isHidden {
+			return tcell.ColorDarkCyan
+		}
+		return tcell.ColorBlue
+	}
+	
+	if isHidden {
+		return tcell.ColorGray
+	}
+	
+	// Determinar cor com base na extensão
+	ext := strings.ToLower(filepath.Ext(fileName))
+	switch ext {
+	case ".txt", ".md", ".log":
+		return tcell.ColorWhite
+	case ".go", ".c", ".cpp", ".py", ".java", ".js", ".html", ".css":
+		return tcell.ColorGreen
+	case ".jpg", ".jpeg", ".png", ".gif", ".bmp":
+		return tcell.ColorPurple
+	case ".mp3", ".wav", ".ogg", ".flac":
+		return tcell.ColorYellow
+	case ".mp4", ".avi", ".mkv", ".mov":
+		return tcell.ColorRed
+	case ".zip", ".tar", ".gz", ".rar", ".7z":
+		return tcell.ColorOrange
+	case ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx":
+		return tcell.ColorLightBlue
+	default:
+		return tcell.ColorWhite
+	}
 }

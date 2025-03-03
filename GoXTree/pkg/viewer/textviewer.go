@@ -220,24 +220,28 @@ func (hv *HexViewer) LoadFile(filePath string) error {
 
 // displayHexContent exibe o conteúdo em formato hexadecimal
 func (hv *HexViewer) displayHexContent(content []byte) {
+	if len(content) == 0 {
+		hv.textView.SetText("Arquivo vazio")
+		return
+	}
+
 	var hexOutput strings.Builder
 
-	// Exibir 16 bytes por linha
+	// Cabeçalho
+	hexOutput.WriteString("       00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F |0123456789ABCDEF|\n")
+	hexOutput.WriteString("------------------------------------------------------|-----------------|\n")
+
+	// Conteúdo
 	for i := 0; i < len(content); i += 16 {
 		// Endereço
-		hexOutput.WriteString(fmt.Sprintf("[yellow]%08x[white]  ", i))
+		hexOutput.WriteString(fmt.Sprintf("%06X ", i))
 
 		// Bytes em hexadecimal
 		for j := 0; j < 16; j++ {
 			if i+j < len(content) {
-				hexOutput.WriteString(fmt.Sprintf("%02x ", content[i+j]))
+				hexOutput.WriteString(fmt.Sprintf("%02X ", content[i+j]))
 			} else {
 				hexOutput.WriteString("   ")
-			}
-
-			// Espaço extra no meio
-			if j == 7 {
-				hexOutput.WriteString(" ")
 			}
 		}
 

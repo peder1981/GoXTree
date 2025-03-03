@@ -42,8 +42,8 @@ func (a *App) selectAll() {
 	a.statusBar.SetStatus(fmt.Sprintf("%d arquivos selecionados", len(a.selectedFiles)))
 }
 
-// deselectAll remove a seleção de todos os arquivos
-func (a *App) deselectAll() {
+// unselectAll remove a seleção de todos os arquivos
+func (a *App) unselectAll() {
 	// Limpar seleção atual
 	a.selectedFiles = make(map[string]bool)
 	
@@ -443,7 +443,7 @@ func (a *App) showSelectionMenu() {
 	
 	menu.AddItem("Desmarcar Todos", "Remove todas as seleções", 'd', func() {
 		a.pages.RemovePage("selectionMenu")
-		a.deselectAll()
+		a.unselectAll()
 	})
 	
 	menu.AddItem("Inverter Seleção", "Inverte a seleção atual", 'i', func() {

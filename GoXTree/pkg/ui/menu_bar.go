@@ -82,18 +82,33 @@ func (m *MenuBar) handleMenuKey(key tcell.Key) bool {
 // showMainMenu exibe o menu principal
 func (a *App) showMainMenu() {
 	menu := tview.NewList().
-		AddItem("Arquivo", "Operações de arquivo", 'a', nil).
-		AddItem("Editar", "Operações de edição", 'e', nil).
-		AddItem("Visualizar", "Opções de visualização", 'v', nil).
-		AddItem("Ferramentas", "Ferramentas úteis", 't', nil).
-		AddItem("Configurações", "Configurar aplicação", 'c', nil).
+		AddItem("Arquivo", "Operações de arquivo", 'a', func() {
+			a.pages.RemovePage("mainMenu")
+			a.showFileMenu()
+		}).
+		AddItem("Seleção", "Operações de seleção", 's', func() {
+			a.pages.RemovePage("mainMenu")
+			a.showSelectionMenu()
+		}).
+		AddItem("Visualizar", "Opções de visualização", 'v', func() {
+			a.pages.RemovePage("mainMenu")
+			a.showViewMenu()
+		}).
+		AddItem("Ferramentas", "Ferramentas úteis", 't', func() {
+			a.pages.RemovePage("mainMenu")
+			a.showToolsMenu()
+		}).
+		AddItem("Configurações", "Configurar aplicação", 'c', func() {
+			a.pages.RemovePage("mainMenu")
+			a.showConfigMenu()
+		}).
 		AddItem("Ajuda", "Exibir ajuda", 'h', func() {
 			a.pages.RemovePage("mainMenu")
-			a.showHelpDialog()
+			a.showHelp()
 		}).
 		AddItem("Sair", "Sair da aplicação", 's', func() {
 			a.pages.RemovePage("mainMenu")
-			a.app.Stop()
+			a.confirmExit()
 		})
 
 	menu.SetBorder(true).
@@ -109,6 +124,134 @@ func (a *App) showMainMenu() {
 	})
 
 	a.pages.AddPage("mainMenu", menu, true, true)
+	a.app.SetFocus(menu)
+}
+
+// showFileMenu exibe o menu de arquivo
+func (a *App) showFileMenu() {
+	menu := tview.NewList().
+		AddItem("Novo Arquivo", "Criar novo arquivo", 'n', func() {
+			a.pages.RemovePage("fileMenu")
+			a.createFile()
+		}).
+		AddItem("Nova Pasta", "Criar nova pasta", 'p', func() {
+			a.pages.RemovePage("fileMenu")
+			a.createDirectory()
+		}).
+		AddItem("Renomear", "Renomear arquivo ou pasta", 'r', func() {
+			a.pages.RemovePage("fileMenu")
+			a.renameFile()
+		}).
+		AddItem("Copiar", "Copiar arquivo ou pasta", 'c', func() {
+			a.pages.RemovePage("fileMenu")
+			a.copyFile()
+		}).
+		AddItem("Mover", "Mover arquivo ou pasta", 'm', func() {
+			a.pages.RemovePage("fileMenu")
+			a.moveFile()
+		}).
+		AddItem("Excluir", "Excluir arquivo ou pasta", 'e', func() {
+			a.pages.RemovePage("fileMenu")
+			a.deleteFile()
+		}).
+		AddItem("Voltar", "Voltar ao menu principal", 'v', func() {
+			a.pages.RemovePage("fileMenu")
+			a.showMainMenu()
+		})
+
+	menu.SetBorder(true).
+		SetTitle("Arquivo").
+		SetTitleAlign(tview.AlignCenter)
+
+	menu.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			a.pages.RemovePage("fileMenu")
+			return nil
+		}
+		return event
+	})
+
+	a.pages.AddPage("fileMenu", menu, true, true)
+	a.app.SetFocus(menu)
+}
+
+// showViewMenu exibe o menu de visualização
+func (a *App) showViewMenu() {
+	menu := tview.NewList().
+		AddItem("Arquivos Ocultos", "Mostrar/ocultar arquivos ocultos", 'o', func() {
+			a.pages.RemovePage("viewMenu")
+			a.toggleHiddenFiles()
+		}).
+		AddItem("Ordenar por Nome", "Ordenar arquivos por nome", 'n', func() {
+			a.pages.RemovePage("viewMenu")
+			a.sortByName()
+		}).
+		AddItem("Ordenar por Data", "Ordenar arquivos por data", 'd', func() {
+			a.pages.RemovePage("viewMenu")
+			a.sortByDate()
+		}).
+		AddItem("Ordenar por Tamanho", "Ordenar arquivos por tamanho", 't', func() {
+			a.pages.RemovePage("viewMenu")
+			a.sortBySize()
+		}).
+		AddItem("Inverter Ordem", "Inverter ordem de classificação", 'i', func() {
+			a.pages.RemovePage("viewMenu")
+			a.toggleSortOrder()
+		}).
+		AddItem("Atualizar", "Atualizar visualização", 'a', func() {
+			a.pages.RemovePage("viewMenu")
+			a.refreshCurrentDir()
+		}).
+		AddItem("Voltar", "Voltar ao menu principal", 'v', func() {
+			a.pages.RemovePage("viewMenu")
+			a.showMainMenu()
+		})
+
+	menu.SetBorder(true).
+		SetTitle("Visualizar").
+		SetTitleAlign(tview.AlignCenter)
+
+	menu.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			a.pages.RemovePage("viewMenu")
+			return nil
+		}
+		return event
+	})
+
+	a.pages.AddPage("viewMenu", menu, true, true)
+	a.app.SetFocus(menu)
+}
+
+// showConfigMenu exibe o menu de configurações
+func (a *App) showConfigMenu() {
+	menu := tview.NewList().
+		AddItem("Temas", "Selecionar tema visual", 't', func() {
+			a.pages.RemovePage("configMenu")
+			a.showThemeSelector()
+		}).
+		AddItem("Preferências", "Configurar preferências", 'p', func() {
+			a.pages.RemovePage("configMenu")
+			a.showPreferences()
+		}).
+		AddItem("Voltar", "Voltar ao menu principal", 'v', func() {
+			a.pages.RemovePage("configMenu")
+			a.showMainMenu()
+		})
+
+	menu.SetBorder(true).
+		SetTitle("Configurações").
+		SetTitleAlign(tview.AlignCenter)
+
+	menu.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			a.pages.RemovePage("configMenu")
+			return nil
+		}
+		return event
+	})
+
+	a.pages.AddPage("configMenu", menu, true, true)
 	a.app.SetFocus(menu)
 }
 

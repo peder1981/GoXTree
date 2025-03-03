@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/peder1981/GoXTree/pkg/utils"
@@ -231,7 +232,7 @@ func (a *App) SetupKeyHandlers() {
 				a.selectAll()
 				return nil
 			case 'd', 'D': // Ctrl+D: Desmarcar todos os arquivos
-				a.deselectAll()
+				a.unselectAll()
 				return nil
 			case 'h', 'H': // Ctrl+H: Alternar exibição de arquivos ocultos
 				a.toggleHiddenFiles()
@@ -494,7 +495,7 @@ func (a *App) handleKeyEvents(event *tcell.EventKey) *tcell.EventKey {
 		return nil
 	case tcell.KeyCtrlD:
 		// Desmarcar todos os arquivos
-		a.deselectAll()
+		a.unselectAll()
 		return nil
 	case tcell.KeyCtrlF:
 		// Buscar arquivo
@@ -734,7 +735,68 @@ func (a *App) toggleHiddenFiles() {
 
 // renameFile abre o diálogo para renomear um arquivo
 func (a *App) renameFile() {
-	a.showMessage("Renomear arquivo não implementado")
+	// Obter arquivo selecionado
+	selectedFile := a.fileView.GetSelectedFile()
+	if selectedFile == "" {
+		a.showError("Nenhum arquivo selecionado")
+		return
+	}
+	
+	// Obter caminho completo
+	oldPath := filepath.Join(a.currentDir, selectedFile)
+	
+	// Verificar se o arquivo existe
+	if _, err := os.Stat(oldPath); err != nil {
+		a.showError(fmt.Sprintf("Erro ao acessar arquivo: %v", err))
+		return
+	}
+	
+	// Exibir diálogo para novo nome
+	a.showInputDialogWithValue("Renomear", selectedFile, func(newName string) {
+		if newName == "" || newName == selectedFile {
+			return
+		}
+		
+		// Verificar se o nome contém caracteres inválidos
+		if strings.ContainsAny(newName, "\\/:*?\"<>|") {
+			a.showError("O nome contém caracteres inválidos")
+			return
+		}
+		
+		// Criar caminho completo para o novo nome
+		newPath := filepath.Join(a.currentDir, newName)
+		
+		// Verificar se já existe um arquivo com o novo nome
+		if _, err := os.Stat(newPath); err == nil {
+			a.showConfirmDialog("Confirmar substituição", fmt.Sprintf("Já existe um arquivo ou diretório com o nome '%s'. Deseja substituí-lo?", newName), func(confirmed bool) {
+				if confirmed {
+					// Remover arquivo existente
+					if err := os.RemoveAll(newPath); err != nil {
+						a.showError(fmt.Sprintf("Erro ao remover arquivo existente: %v", err))
+						return
+					}
+					
+					// Renomear arquivo
+					if err := os.Rename(oldPath, newPath); err != nil {
+						a.showError(fmt.Sprintf("Erro ao renomear: %v", err))
+						return
+					}
+					
+					a.refreshCurrentDir()
+					a.showMessage(fmt.Sprintf("'%s' renomeado para '%s'", selectedFile, newName))
+				}
+			})
+		} else {
+			// Renomear arquivo
+			if err := os.Rename(oldPath, newPath); err != nil {
+				a.showError(fmt.Sprintf("Erro ao renomear: %v", err))
+				return
+			}
+			
+			a.refreshCurrentDir()
+			a.showMessage(fmt.Sprintf("'%s' renomeado para '%s'", selectedFile, newName))
+		}
+	})
 }
 
 // createDirectory abre o diálogo para criar um diretório
@@ -938,15 +1000,76 @@ func (a *App) compareFiles(file1, file2 string) {
 
 // addToHistory adiciona um diretório ao histórico de navegação
 func (a *App) addToHistory(dir string) {
-	// Verificar se o diretório já está no histórico
-	for i, d := range a.history {
-		if d == dir {
-			a.historyPos = i
-			return
-		}
+	// Verificar se o diretório já está no final do histórico
+	if len(a.history) > 0 && a.history[len(a.history)-1] == dir {
+		return
 	}
-	
-	// Adicionar ao histórico
+
+	// Adicionar diretório ao histórico
 	a.history = append(a.history, dir)
 	a.historyPos = len(a.history) - 1
+}
+
+// sortByName ordena os arquivos por nome
+func (a *App) sortByName() {
+	a.fileView.SetSortBy("name")
+	a.refreshCurrentDir()
+	a.showMessage("Arquivos ordenados por nome")
+}
+
+// sortByDate ordena os arquivos por data
+func (a *App) sortByDate() {
+	a.fileView.SetSortBy("date")
+	a.refreshCurrentDir()
+	a.showMessage("Arquivos ordenados por data")
+}
+
+// sortBySize ordena os arquivos por tamanho
+func (a *App) sortBySize() {
+	a.fileView.SetSortBy("size")
+	a.refreshCurrentDir()
+	a.showMessage("Arquivos ordenados por tamanho")
+}
+
+// showPreferences exibe as preferências do aplicativo
+func (a *App) showPreferences() {
+	form := tview.NewForm()
+	form.SetTitle("Preferências").
+		SetTitleAlign(tview.AlignCenter).
+		SetBorder(true)
+	
+	showHidden := a.showHidden
+	
+	form.AddCheckbox("Mostrar arquivos ocultos", showHidden, func(checked bool) {
+		showHidden = checked
+	})
+	
+	form.AddButton("Salvar", func() {
+		a.showHidden = showHidden
+		a.refreshCurrentDir()
+		a.pages.RemovePage("preferences")
+		a.showMessage("Preferências salvas")
+	})
+	
+	form.AddButton("Cancelar", func() {
+		a.pages.RemovePage("preferences")
+	})
+	
+	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			a.pages.RemovePage("preferences")
+			return nil
+		}
+		return event
+	})
+	
+	a.pages.AddPage("preferences", tview.NewFlex().
+		AddItem(nil, 0, 1, false).
+		AddItem(tview.NewFlex().
+			SetDirection(tview.FlexRow).
+			AddItem(nil, 0, 1, false).
+			AddItem(form, 10, 1, true).
+			AddItem(nil, 0, 1, false), 50, 1, true).
+		AddItem(nil, 0, 1, false), true, true)
+	a.app.SetFocus(form)
 }
