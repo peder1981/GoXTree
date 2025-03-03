@@ -12,7 +12,6 @@ var (
 	ColorBorder     = tcell.ColorBlue
 	ColorTitle      = tcell.ColorYellow
 	ColorHighlight  = tcell.ColorGreen
-	ColorSelected   = tcell.ColorWhite
 	ColorHeader     = tcell.ColorYellow
 	ColorError      = tcell.ColorRed
 	ColorHelp       = tcell.ColorGreen
@@ -26,10 +25,6 @@ const (
 	BorderTopRight        = '+'
 	BorderBottomLeft      = '+'
 	BorderBottomRight     = '+'
-	BorderLeft            = '|'
-	BorderRight           = '|'
-	BorderTop             = '-'
-	BorderBottom          = '-'
 	TreeVerticalLine      = '|'
 	TreeHorizontalLine    = '-'
 	TreeCorner            = '+'
@@ -65,21 +60,6 @@ func ApplyRetroTheme(app *tview.Application) {
 	tview.Borders.TopRight = BorderTopRight
 	tview.Borders.BottomLeft = BorderBottomLeft
 	tview.Borders.BottomRight = BorderBottomRight
-	tview.Borders.Left = BorderLeft
-	tview.Borders.Right = BorderRight
-	tview.Borders.Top = BorderTop
-	tview.Borders.Bottom = BorderBottom
-
-	// Definir caracteres ASCII para a árvore
-	tview.TreeGraphics.VerticalLine = TreeVerticalLine
-	tview.TreeGraphics.HorizontalLine = TreeHorizontalLine
-	tview.TreeGraphics.CornerLine = TreeCorner
-	tview.TreeGraphics.ContinueCorner = TreeContinueCorner
-	tview.TreeGraphics.EndCorner = TreeEndCorner
-	tview.TreeGraphics.Directory = TreeDirectory
-	tview.TreeGraphics.DirectoryOpen = TreeDirectoryOpen
-	tview.TreeGraphics.DirectoryClosed = TreeDirectoryClosed
-	tview.TreeGraphics.File = TreeFile
 }
 
 // ApplyRetroThemeToApp aplica o tema retrô a todos os componentes da aplicação
@@ -130,7 +110,6 @@ func ApplyModernThemeToApp(a *App) {
 	modernBorder := tcell.ColorBlue
 	modernTitle := tcell.ColorBlue
 	modernHighlight := tcell.ColorGreen
-	modernSelected := tcell.ColorWhite
 	modernHeader := tcell.ColorBlue
 
 	// Aplicar tema global
@@ -155,24 +134,10 @@ func ApplyModernThemeToApp(a *App) {
 	tview.Borders.TopRight = '┐'
 	tview.Borders.BottomLeft = '└'
 	tview.Borders.BottomRight = '┘'
-	tview.Borders.Left = '│'
-	tview.Borders.Right = '│'
-	tview.Borders.Top = '─'
-	tview.Borders.Bottom = '─'
-
-	// Usar caracteres Unicode para a árvore
-	tview.TreeGraphics.VerticalLine = '│'
-	tview.TreeGraphics.HorizontalLine = '─'
-	tview.TreeGraphics.CornerLine = '├'
-	tview.TreeGraphics.ContinueCorner = '├'
-	tview.TreeGraphics.EndCorner = '└'
-	tview.TreeGraphics.Directory = '📁'
-	tview.TreeGraphics.DirectoryOpen = '📂'
-	tview.TreeGraphics.DirectoryClosed = '📁'
-	tview.TreeGraphics.File = '📄'
 
 	// Personalizar TreeView
 	a.treeView.TreeView.SetBackgroundColor(modernBackground)
+	a.treeView.TreeView.SetGraphicsColor(modernBorder)
 	a.treeView.TreeView.SetBorderColor(modernBorder)
 	a.treeView.TreeView.SetTitleColor(modernTitle)
 	a.treeView.TreeView.SetTitle(" Diretórios ")
@@ -214,7 +179,6 @@ func ApplyDarkThemeToApp(a *App) {
 	darkBorder := tcell.ColorDarkBlue
 	darkTitle := tcell.ColorLightBlue
 	darkHighlight := tcell.ColorLightGreen
-	darkSelected := tcell.ColorWhite
 	darkHeader := tcell.ColorLightBlue
 
 	// Aplicar tema global
@@ -239,24 +203,10 @@ func ApplyDarkThemeToApp(a *App) {
 	tview.Borders.TopRight = '┐'
 	tview.Borders.BottomLeft = '└'
 	tview.Borders.BottomRight = '┘'
-	tview.Borders.Left = '│'
-	tview.Borders.Right = '│'
-	tview.Borders.Top = '─'
-	tview.Borders.Bottom = '─'
-
-	// Usar caracteres Unicode para a árvore
-	tview.TreeGraphics.VerticalLine = '│'
-	tview.TreeGraphics.HorizontalLine = '─'
-	tview.TreeGraphics.CornerLine = '├'
-	tview.TreeGraphics.ContinueCorner = '├'
-	tview.TreeGraphics.EndCorner = '└'
-	tview.TreeGraphics.Directory = '📁'
-	tview.TreeGraphics.DirectoryOpen = '📂'
-	tview.TreeGraphics.DirectoryClosed = '📁'
-	tview.TreeGraphics.File = '📄'
 
 	// Personalizar TreeView
 	a.treeView.TreeView.SetBackgroundColor(darkBackground)
+	a.treeView.TreeView.SetGraphicsColor(darkBorder)
 	a.treeView.TreeView.SetBorderColor(darkBorder)
 	a.treeView.TreeView.SetTitleColor(darkTitle)
 	a.treeView.TreeView.SetTitle(" Diretórios ")
@@ -298,7 +248,6 @@ func ApplyLightThemeToApp(a *App) {
 	lightBorder := tcell.ColorBlue
 	lightTitle := tcell.ColorBlue
 	lightHighlight := tcell.ColorGreen
-	lightSelected := tcell.ColorBlack
 	lightHeader := tcell.ColorBlue
 
 	// Aplicar tema global
@@ -323,24 +272,10 @@ func ApplyLightThemeToApp(a *App) {
 	tview.Borders.TopRight = '┐'
 	tview.Borders.BottomLeft = '└'
 	tview.Borders.BottomRight = '┘'
-	tview.Borders.Left = '│'
-	tview.Borders.Right = '│'
-	tview.Borders.Top = '─'
-	tview.Borders.Bottom = '─'
-
-	// Usar caracteres Unicode para a árvore
-	tview.TreeGraphics.VerticalLine = '│'
-	tview.TreeGraphics.HorizontalLine = '─'
-	tview.TreeGraphics.CornerLine = '├'
-	tview.TreeGraphics.ContinueCorner = '├'
-	tview.TreeGraphics.EndCorner = '└'
-	tview.TreeGraphics.Directory = '📁'
-	tview.TreeGraphics.DirectoryOpen = '📂'
-	tview.TreeGraphics.DirectoryClosed = '📁'
-	tview.TreeGraphics.File = '📄'
 
 	// Personalizar TreeView
 	a.treeView.TreeView.SetBackgroundColor(lightBackground)
+	a.treeView.TreeView.SetGraphicsColor(lightBorder)
 	a.treeView.TreeView.SetBorderColor(lightBorder)
 	a.treeView.TreeView.SetTitleColor(lightTitle)
 	a.treeView.TreeView.SetTitle(" Diretórios ")
@@ -379,28 +314,28 @@ func GetRetroColorScheme() map[string]tcell.Color {
 	return map[string]tcell.Color{
 		"dir":      tcell.ColorYellow,
 		"exe":      tcell.ColorGreen,
-		"zip":      tcell.ColorMagenta,
-		"tar":      tcell.ColorMagenta,
-		"gz":       tcell.ColorMagenta,
-		"rar":      tcell.ColorMagenta,
-		"7z":       tcell.ColorMagenta,
+		"zip":      tcell.NewRGBColor(255, 0, 255),
+		"tar":      tcell.NewRGBColor(255, 0, 255),
+		"gz":       tcell.NewRGBColor(255, 0, 255),
+		"rar":      tcell.NewRGBColor(255, 0, 255),
+		"7z":       tcell.NewRGBColor(255, 0, 255),
 		"txt":      tcell.ColorWhite,
 		"md":       tcell.ColorWhite,
-		"go":       tcell.ColorCyan,
-		"c":        tcell.ColorCyan,
-		"cpp":      tcell.ColorCyan,
-		"h":        tcell.ColorCyan,
-		"py":       tcell.ColorCyan,
-		"js":       tcell.ColorCyan,
-		"html":     tcell.ColorCyan,
-		"css":      tcell.ColorCyan,
-		"json":     tcell.ColorCyan,
-		"xml":      tcell.ColorCyan,
-		"yaml":     tcell.ColorCyan,
-		"yml":      tcell.ColorCyan,
-		"toml":     tcell.ColorCyan,
-		"ini":      tcell.ColorCyan,
-		"conf":     tcell.ColorCyan,
+		"go":       tcell.NewRGBColor(0, 255, 255),
+		"c":        tcell.NewRGBColor(0, 255, 255),
+		"cpp":      tcell.NewRGBColor(0, 255, 255),
+		"h":        tcell.NewRGBColor(0, 255, 255),
+		"py":       tcell.NewRGBColor(0, 255, 255),
+		"js":       tcell.NewRGBColor(0, 255, 255),
+		"html":     tcell.NewRGBColor(0, 255, 255),
+		"css":      tcell.NewRGBColor(0, 255, 255),
+		"json":     tcell.NewRGBColor(0, 255, 255),
+		"xml":      tcell.NewRGBColor(0, 255, 255),
+		"yaml":     tcell.NewRGBColor(0, 255, 255),
+		"yml":      tcell.NewRGBColor(0, 255, 255),
+		"toml":     tcell.NewRGBColor(0, 255, 255),
+		"ini":      tcell.NewRGBColor(0, 255, 255),
+		"conf":     tcell.NewRGBColor(0, 255, 255),
 		"sh":       tcell.ColorGreen,
 		"bat":      tcell.ColorGreen,
 		"cmd":      tcell.ColorGreen,
@@ -411,15 +346,15 @@ func GetRetroColorScheme() map[string]tcell.Color {
 		"gif":      tcell.ColorRed,
 		"bmp":      tcell.ColorRed,
 		"svg":      tcell.ColorRed,
-		"mp3":      tcell.ColorMagenta,
-		"wav":      tcell.ColorMagenta,
-		"ogg":      tcell.ColorMagenta,
-		"mp4":      tcell.ColorMagenta,
-		"avi":      tcell.ColorMagenta,
-		"mkv":      tcell.ColorMagenta,
+		"mp3":      tcell.NewRGBColor(255, 0, 255),
+		"wav":      tcell.NewRGBColor(255, 0, 255),
+		"ogg":      tcell.NewRGBColor(255, 0, 255),
+		"mp4":      tcell.NewRGBColor(255, 0, 255),
+		"avi":      tcell.NewRGBColor(255, 0, 255),
+		"mkv":      tcell.NewRGBColor(255, 0, 255),
 		"pdf":      tcell.ColorRed,
-		"doc":      tcell.ColorCyan,
-		"docx":     tcell.ColorCyan,
+		"doc":      tcell.NewRGBColor(0, 255, 255),
+		"docx":     tcell.NewRGBColor(0, 255, 255),
 		"xls":      tcell.ColorGreen,
 		"xlsx":     tcell.ColorGreen,
 		"ppt":      tcell.ColorYellow,

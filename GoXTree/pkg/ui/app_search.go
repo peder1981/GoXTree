@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,7 +9,6 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/peder1981/GoXTree/pkg/utils"
 	"github.com/rivo/tview"
-	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
 // showSearchDialog exibe o diálogo de busca
@@ -309,77 +307,6 @@ func (a *App) showCompareDialog() {
 	a.app.SetFocus(form)
 }
 
-// compareFiles compara dois arquivos
-func (a *App) compareFiles(file1, file2 string) {
-	// Ler conteúdo dos arquivos
-	content1, err1 := os.ReadFile(file1)
-	content2, err2 := os.ReadFile(file2)
-	
-	if err1 != nil || err2 != nil {
-		a.showError("Erro ao ler arquivos")
-		return
-	}
-	
-	// Comparar conteúdo
-	if bytes.Equal(content1, content2) {
-		a.showConfirmDialog("Comparação", "Os arquivos são idênticos", func(confirmed bool) {
-			// Não fazer nada
-		})
-		return
-	}
-	
-	// Criar visualização de diferenças
-	diffView := tview.NewTextView()
-	diffView.SetDynamicColors(true).
-		SetScrollable(true).
-		SetTitle(fmt.Sprintf("Comparação: %s <-> %s", filepath.Base(file1), filepath.Base(file2))).
-		SetTitleAlign(tview.AlignCenter).
-		SetBorder(true)
-	
-	// Configurar manipulador de eventos
-	diffView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyEscape {
-			a.pages.RemovePage("diffView")
-			return nil
-		}
-		return event
-	})
-	
-	// Adicionar página
-	a.pages.AddPage("diffView", diffView, true, true)
-	a.app.SetFocus(diffView)
-	
-	// Calcular diferenças em goroutine
-	go func() {
-		// Converter conteúdo para strings
-		text1 := string(content1)
-		text2 := string(content2)
-		
-		// Calcular diferenças usando diffmatchpatch
-		dmp := diffmatchpatch.New()
-		diffs := dmp.DiffMain(text1, text2, false)
-		
-		// Formatar saída
-		var output strings.Builder
-		
-		for _, diff := range diffs {
-			switch diff.Type {
-			case diffmatchpatch.DiffEqual:
-				output.WriteString(fmt.Sprintf("  %s\n", diff.Text))
-			case diffmatchpatch.DiffDelete:
-				output.WriteString(fmt.Sprintf("[red]- %s[white]\n", diff.Text))
-			case diffmatchpatch.DiffInsert:
-				output.WriteString(fmt.Sprintf("[green]+ %s[white]\n", diff.Text))
-			}
-		}
-		
-		// Atualizar visualização
-		a.app.QueueUpdateDraw(func() {
-			fmt.Fprintf(diffView, "%s", output.String())
-		})
-	}()
-}
-
 // showSyncDialog exibe o diálogo de sincronização de diretórios
 func (a *App) showSyncDialog() {
 	// Criar formulário
@@ -440,14 +367,14 @@ func (a *App) showSyncDialog() {
 		
 		// Expandir caminhos
 		if strings.HasPrefix(sourceDir, "~") {
-			homeDir, err := a.getHomeDir()
+			homeDir, err := os.UserHomeDir()
 			if err == nil {
 				sourceDir = filepath.Join(homeDir, sourceDir[1:])
 			}
 		}
 		
 		if strings.HasPrefix(targetDir, "~") {
-			homeDir, err := a.getHomeDir()
+			homeDir, err := os.UserHomeDir()
 			if err == nil {
 				targetDir = filepath.Join(homeDir, targetDir[1:])
 			}
@@ -473,7 +400,27 @@ func (a *App) showSyncDialog() {
 		}
 		
 		// Sincronizar diretórios
-		a.syncDirectories(sourceDir, targetDir, deleteOrphans, overwriteNewer, skipExisting, includeHidden, previewOnly)
+		options := utils.SyncOptions{
+			SourceDir:      sourceDir,
+			DestDir:        targetDir,
+			DeleteOrphaned: deleteOrphans,
+			PreviewOnly:    previewOnly,
+			SkipNewer:      !overwriteNewer,
+			SkipExisting:   skipExisting,
+			IncludeHidden:  includeHidden,
+		}
+		
+		actions, err := utils.SyncDirectories(options)
+		if err != nil {
+			a.showError(fmt.Sprintf("Erro ao sincronizar: %v", err))
+			return
+		}
+		
+		// Mostrar resultado
+		a.showSyncResults(actions)
+		
+		// Atualizar visualização
+		a.refreshView()
 	})
 	
 	form.AddButton("Cancelar", func() {
@@ -492,262 +439,6 @@ func (a *App) showSyncDialog() {
 	// Adicionar página
 	a.pages.AddPage("syncDialog", form, true, true)
 	a.app.SetFocus(form)
-}
-
-// syncDirectories sincroniza dois diretórios
-func (a *App) syncDirectories(sourceDir, targetDir string, deleteOrphans, overwriteNewer, skipExisting, includeHidden, previewOnly bool) {
-	// Criar visualização de texto
-	textView := tview.NewTextView()
-	textView.SetDynamicColors(true).
-		SetScrollable(true).
-		SetTitle(fmt.Sprintf("Sincronização: %s -> %s", sourceDir, targetDir)).
-		SetTitleAlign(tview.AlignCenter).
-		SetBorder(true)
-	
-	// Configurar manipulador de eventos
-	textView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyEscape {
-			a.pages.RemovePage("syncView")
-			return nil
-		}
-		return event
-	})
-	
-	// Adicionar página
-	a.pages.AddPage("syncView", textView, true, true)
-	a.app.SetFocus(textView)
-	
-	// Realizar sincronização em goroutine
-	go func() {
-		// Verificar se o diretório de destino existe
-		_, err := os.Stat(targetDir)
-		if os.IsNotExist(err) {
-			// Criar diretório de destino
-			err = os.MkdirAll(targetDir, 0755)
-			if err != nil {
-				a.app.QueueUpdateDraw(func() {
-					fmt.Fprintf(textView, "[red]Erro ao criar diretório de destino: %v[white]", err)
-				})
-				return
-			}
-		}
-		
-		// Estatísticas
-		var (
-			totalFiles    int
-			copiedFiles   int
-			skippedFiles  int
-			deletedFiles  int
-			errorFiles    int
-			totalSize     int64
-			copiedSize    int64
-		)
-		
-		// Função para adicionar linha ao log
-		addLog := func(format string, args ...interface{}) {
-			a.app.QueueUpdateDraw(func() {
-				fmt.Fprintf(textView, format+"\n", args...)
-			})
-		}
-		
-		// Iniciar sincronização
-		addLog("[yellow]Iniciando sincronização...[white]")
-		
-		// Mapear arquivos de destino
-		destFiles := make(map[string]os.FileInfo)
-		if deleteOrphans {
-			addLog("Mapeando arquivos de destino...")
-			
-			err := filepath.Walk(targetDir, func(path string, info os.FileInfo, err error) error {
-				if err != nil {
-					return nil
-				}
-				
-				// Ignorar o diretório raiz
-				if path == targetDir {
-					return nil
-				}
-				
-				// Verificar se é arquivo oculto
-				if !includeHidden && strings.HasPrefix(filepath.Base(path), ".") {
-					if info.IsDir() {
-						return filepath.SkipDir
-					}
-					return nil
-				}
-				
-				// Adicionar ao mapa
-				relPath, _ := filepath.Rel(targetDir, path)
-				destFiles[relPath] = info
-				
-				return nil
-			})
-			
-			if err != nil {
-				addLog("[red]Erro ao mapear arquivos de destino: %v[white]", err)
-			}
-		}
-		
-		// Sincronizar arquivos
-		err = filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				addLog("[red]Erro ao acessar %s: %v[white]", path, err)
-				errorFiles++
-				return nil
-			}
-			
-			// Ignorar o diretório raiz
-			if path == sourceDir {
-				return nil
-			}
-			
-			// Verificar se é arquivo oculto
-			if !includeHidden && strings.HasPrefix(filepath.Base(path), ".") {
-				if info.IsDir() {
-					return filepath.SkipDir
-				}
-				return nil
-			}
-			
-			// Calcular caminho relativo
-			relPath, _ := filepath.Rel(sourceDir, path)
-			destPath := filepath.Join(targetDir, relPath)
-			
-			// Remover do mapa de destino
-			if deleteOrphans {
-				delete(destFiles, relPath)
-			}
-			
-			// Verificar se é diretório
-			if info.IsDir() {
-				// Criar diretório de destino
-				if !previewOnly {
-					err = os.MkdirAll(destPath, info.Mode())
-					if err != nil {
-						addLog("[red]Erro ao criar diretório %s: %v[white]", destPath, err)
-						errorFiles++
-					} else {
-						addLog("Criado diretório: %s", relPath)
-					}
-				} else {
-					addLog("[cyan]Seria criado diretório: %s[white]", relPath)
-				}
-				
-				return nil
-			}
-			
-			// Verificar se o arquivo já existe
-			destInfo, err := os.Stat(destPath)
-			if err == nil {
-				// Arquivo existe
-				if skipExisting {
-					addLog("Ignorado arquivo existente: %s", relPath)
-					skippedFiles++
-					return nil
-				}
-				
-				// Verificar data de modificação
-				if !overwriteNewer && destInfo.ModTime().After(info.ModTime()) {
-					addLog("Ignorado arquivo mais novo no destino: %s", relPath)
-					skippedFiles++
-					return nil
-				}
-				
-				// Verificar tamanho
-				if destInfo.Size() == info.Size() && destInfo.ModTime() == info.ModTime() {
-					addLog("Ignorado arquivo idêntico: %s", relPath)
-					skippedFiles++
-					return nil
-				}
-			}
-			
-			// Copiar arquivo
-			totalFiles++
-			totalSize += info.Size()
-			
-			if !previewOnly {
-				// Criar diretório pai
-				err = os.MkdirAll(filepath.Dir(destPath), 0755)
-				if err != nil {
-					addLog("[red]Erro ao criar diretório pai para %s: %v[white]", destPath, err)
-					errorFiles++
-					return nil
-				}
-				
-				// Copiar arquivo
-				err = utils.CopyFile(path, destPath)
-				if err != nil {
-					addLog("[red]Erro ao copiar %s: %v[white]", relPath, err)
-					errorFiles++
-				} else {
-					addLog("Copiado: %s (%s)", relPath, utils.FormatFileSize(info.Size()))
-					copiedFiles++
-					copiedSize += info.Size()
-				}
-			} else {
-				addLog("[cyan]Seria copiado: %s (%s)[white]", relPath, utils.FormatFileSize(info.Size()))
-				copiedFiles++
-				copiedSize += info.Size()
-			}
-			
-			return nil
-		})
-		
-		if err != nil {
-			addLog("[red]Erro ao sincronizar: %v[white]", err)
-		}
-		
-		// Excluir arquivos órfãos
-		if deleteOrphans && len(destFiles) > 0 {
-			addLog("\n[yellow]Excluindo arquivos órfãos...[white]")
-			
-			for relPath, info := range destFiles {
-				destPath := filepath.Join(targetDir, relPath)
-				
-				if !previewOnly {
-					var err error
-					if info.IsDir() {
-						err = os.RemoveAll(destPath)
-					} else {
-						err = os.Remove(destPath)
-					}
-					
-					if err != nil {
-						addLog("[red]Erro ao excluir %s: %v[white]", relPath, err)
-						errorFiles++
-					} else {
-						if info.IsDir() {
-							addLog("Excluído diretório: %s", relPath)
-						} else {
-							addLog("Excluído arquivo: %s", relPath)
-							deletedFiles++
-						}
-					}
-				} else {
-					if info.IsDir() {
-						addLog("[cyan]Seria excluído diretório: %s[white]", relPath)
-					} else {
-						addLog("[cyan]Seria excluído arquivo: %s[white]", relPath)
-						deletedFiles++
-					}
-				}
-			}
-		}
-		
-		// Exibir resumo
-		addLog("\n[yellow]Resumo da sincronização:[white]")
-		addLog("Total de arquivos: %d", totalFiles)
-		addLog("Arquivos copiados: %d", copiedFiles)
-		addLog("Arquivos ignorados: %d", skippedFiles)
-		addLog("Arquivos excluídos: %d", deletedFiles)
-		addLog("Erros: %d", errorFiles)
-		addLog("Tamanho total: %s", utils.FormatFileSize(totalSize))
-		addLog("Tamanho copiado: %s", utils.FormatFileSize(copiedSize))
-		
-		if previewOnly {
-			addLog("\n[yellow]Esta foi apenas uma visualização. Nenhuma alteração foi realizada.[white]")
-		}
-	}()
 }
 
 // showConfirmDialog exibe o diálogo de confirmação

@@ -20,7 +20,6 @@ type FileView struct {
 	files      []string
 	showHidden bool
 	itemCount  int
-	selectedFiles []string
 }
 
 // NewFileView cria uma nova visualização de arquivos
@@ -49,7 +48,6 @@ func NewFileView(app *App) *FileView {
 		files:      make([]string, 0),
 		showHidden: false,
 		itemCount:  0,
-		selectedFiles: make([]string, 0),
 	}
 
 	// Configurar manipulador de seleção
@@ -215,13 +213,14 @@ func (f *FileView) UpdateFileList(files []utils.FileInfo, showHidden bool) {
 		isHidden := strings.HasPrefix(file.Name, ".")
 
 		// Verificar se o arquivo está selecionado
-		isSelected := f.IsFileSelected(file.Name)
+		filePath := filepath.Join(f.app.currentDir, file.Name)
+		isSelected := f.app.selectedFiles[filePath]
 
 		// Nome com cor baseada no tipo de arquivo
 		nameCell := tview.NewTableCell(file.Name)
 		if isSelected {
-			nameCell.SetTextColor(ColorSelected)
-			nameCell.SetBackgroundColor(tcell.ColorDarkBlue)
+			nameCell.SetTextColor(tcell.ColorWhite).
+				SetBackgroundColor(tcell.ColorDarkBlue)
 		} else {
 			nameCell.SetTextColor(GetFileColor(file.Name, file.IsDir, isHidden))
 		}
@@ -293,11 +292,42 @@ func (f *FileView) SelectFile(fileName string) bool {
 	return false
 }
 
-func (f *FileView) IsFileSelected(name string) bool {
-	for _, selected := range f.selectedFiles {
-		if selected == name {
-			return true
+// SelectAll seleciona todos os arquivos no diretório atual
+func (f *FileView) SelectAll() {
+	if f.app.selectedFiles == nil {
+		f.app.selectedFiles = make(map[string]bool)
+	}
+	
+	// Obter lista de arquivos no diretório atual
+	files, err := os.ReadDir(f.currentDir)
+	if err != nil {
+		f.app.showError("Erro ao listar arquivos: " + err.Error())
+		return
+	}
+	
+	// Adicionar todos os arquivos à seleção
+	for _, file := range files {
+		if !file.IsDir() {
+			filePath := filepath.Join(f.currentDir, file.Name())
+			f.app.selectedFiles[filePath] = true
 		}
 	}
-	return false
+	
+	// Atualizar visualização
+	f.app.updateFileList()
+	
+	// Atualizar barra de status
+	f.app.statusBar.SetStatus(fmt.Sprintf("%d arquivos selecionados", len(f.app.selectedFiles)))
+}
+
+// UnselectAll remove a seleção de todos os arquivos
+func (f *FileView) UnselectAll() {
+	// Limpar seleção atual
+	f.app.selectedFiles = make(map[string]bool)
+	
+	// Atualizar visualização
+	f.app.updateFileList()
+	
+	// Atualizar barra de status
+	f.app.statusBar.SetStatus("Seleção removida")
 }

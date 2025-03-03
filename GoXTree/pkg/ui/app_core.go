@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/peder1981/GoXTree/pkg/utils"
 	"github.com/rivo/tview"
+	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
 // App representa a aplicação principal
@@ -189,6 +192,7 @@ func (a *App) SetupKeyHandlers() {
 			a.deleteFile()
 			return nil
 		case tcell.KeyF9:
+			// Sincronizar diretórios
 			a.syncDirectories()
 			return nil
 		case tcell.KeyF10:
@@ -198,7 +202,7 @@ func (a *App) SetupKeyHandlers() {
 			a.toggleFocus()
 			return nil
 		case tcell.KeyEscape:
-			// Comportamento do ESC depende do contexto
+			// Verificar se estamos na tela principal ou em uma tela de diálogo
 			if a.pages.HasPage("help") {
 				a.pages.RemovePage("help")
 				return nil
@@ -272,7 +276,7 @@ func (a *App) SetupKeyHandlers() {
 				a.editFile()
 				return nil
 			case 'i', 'I': // Alt+I: Informações
-				a.showFileInfo()
+				a.showSystemInfo()
 				return nil
 			case 'c', 'C': // Alt+C: Comparar arquivos selecionados
 				a.compareSelectedFiles()
@@ -326,79 +330,65 @@ func (a *App) confirmExit() {
 // showSystemInfo exibe informações do sistema
 func (a *App) showSystemInfo() {
 	// Obter informações do sistema
-	hostname, _ := os.Hostname()
-	wd, _ := os.Getwd()
-	homeDir, _ := os.UserHomeDir()
+	info := fmt.Sprintf(`[yellow]GoXTree - Gerenciador de Arquivos[white]
 
-	// Obter informações do diretório atual
-	var dirSize int64
-	var fileCount, dirCount int
+[yellow]Informações do Sistema:[white]
+  [green]Sistema Operacional:[white] %s
+  [green]Arquitetura:[white] %s
+  [green]Número de CPUs:[white] %d
+  [green]Diretório Atual:[white] %s
+  [green]Diretório Home:[white] %s
+  [green]Usuário:[white] %s
 
-	err := filepath.Walk(a.currentDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
+[yellow]Informações do GoXTree:[white]
+  [green]Versão:[white] 1.0.0
+  [green]Tema:[white] %s
+  [green]Arquivos Ocultos:[white] %t
+  [green]Arquivos Selecionados:[white] %d
 
-		if info.IsDir() {
-			dirCount++
-		} else {
-			fileCount++
-			dirSize += info.Size()
-		}
+[yellow]Estatísticas:[white]
+  [green]Memória Utilizada:[white] %s
+  [green]Tempo de Execução:[white] %s
 
-		return nil
-	})
-
-	// Formatar tamanho do diretório
-	sizeStr := "Erro ao calcular tamanho"
-	if err == nil {
-		sizeStr = fmt.Sprintf("%d bytes", dirSize)
-	}
-
-	// Criar conteúdo
-	content := fmt.Sprintf(
-		"Informações do Sistema:\n"+
-			"-------------------\n"+
-			"Sistema Operacional: %s\n"+
-			"Arquitetura: %s\n"+
-			"Hostname: %s\n"+
-			"Diretório Atual: %s\n"+
-			"Diretório Home: %s\n"+
-			"Versão Go: %s\n\n"+
-			"Informações do Diretório:\n"+
-			"----------------------\n"+
-			"Tamanho Total: %s\n"+
-			"Arquivos: %d\n"+
-			"Diretórios: %d\n",
-		"linux",
-		"amd64",
-		hostname,
-		wd,
-		homeDir,
-		"1.17.2",
-		sizeStr,
-		fileCount,
-		dirCount,
+Pressione [green]ESC[white] para fechar esta janela.`,
+		runtime.GOOS,
+		runtime.GOARCH,
+		runtime.NumCPU(),
+		a.currentDir,
+		os.Getenv("HOME"),
+		os.Getenv("USER"),
+		"Retrô", // TODO: Obter tema atual
+		a.showHidden,
+		len(a.selectedFiles),
+		"N/A", // TODO: Obter memória utilizada
+		"N/A", // TODO: Obter tempo de execução
 	)
-
-	// Exibir diálogo
+	
+	// Criar visualização de texto
 	textView := tview.NewTextView().
-		SetText(content).
+		SetText(info).
 		SetDynamicColors(true).
-		SetBorder(true).
-		SetTitle("Informações do Sistema").
-		SetTitleAlign(tview.AlignCenter)
-
+		SetRegions(true).
+		SetScrollable(true).
+		SetTitle(" Informações do Sistema ").
+		SetTitleAlign(tview.AlignLeft).
+		SetBorderColor(tcell.ColorBlue).
+		SetBackgroundColor(tcell.ColorBlack)
+	
+	// Configurar cores
+	textView.SetBorder(true)
+	
+	// Adicionar manipulador de teclas para sair
 	textView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyEscape || event.Key() == tcell.KeyEnter {
-			a.pages.RemovePage("sysinfo")
+		if event.Key() == tcell.KeyEscape {
+			a.pages.SwitchToPage("main")
 			return nil
 		}
 		return event
 	})
-
-	a.pages.AddPage("sysinfo", textView, true, true)
-	a.app.SetFocus(textView)
+	
+	// Adicionar à página e mostrar
+	a.pages.AddAndSwitchToPage("systemInfo", textView, true)
 }
 
 // viewFile visualiza o arquivo selecionado
@@ -448,21 +438,27 @@ func (a *App) viewFile() {
 	a.app.SetFocus(textView)
 }
 
-// addToHistory adiciona um diretório ao histórico de navegação
-func (a *App) addToHistory(dir string) {
-	// Se estamos no meio do histórico, remover tudo após a posição atual
-	if a.historyPos >= 0 && a.historyPos < len(a.history)-1 {
-		a.history = a.history[:a.historyPos+1]
-	}
-
-	// Verificar se o diretório já é o último no histórico
-	if len(a.history) > 0 && a.history[len(a.history)-1] == dir {
+// navigateTo navega para um diretório específico
+func (a *App) navigateTo(dir string) {
+	// Verificar se o diretório existe
+	fileInfo, err := os.Stat(dir)
+	if err != nil {
+		a.showError(fmt.Sprintf("Erro ao acessar diretório: %s", err))
 		return
 	}
-
-	// Adicionar diretório ao histórico
-	a.history = append(a.history, dir)
-	a.historyPos = len(a.history) - 1
+	
+	// Verificar se é um diretório
+	if !fileInfo.IsDir() {
+		a.showError(fmt.Sprintf("%s não é um diretório", dir))
+		return
+	}
+	
+	// Navegar para o diretório
+	a.currentDir = dir
+	a.treeView.LoadTree(dir)
+	a.fileView.SetCurrentDir(dir)
+	a.addToHistory(dir)
+	a.statusBar.UpdateStatus(dir)
 }
 
 // handleKeyEvents manipula eventos de teclado
@@ -494,11 +490,11 @@ func (a *App) handleKeyEvents(event *tcell.EventKey) *tcell.EventKey {
 		return nil
 	case tcell.KeyCtrlA:
 		// Selecionar todos os arquivos
-		a.selectAllFiles()
+		a.selectAll()
 		return nil
 	case tcell.KeyCtrlD:
 		// Desmarcar todos os arquivos
-		a.unselectAllFiles()
+		a.deselectAll()
 		return nil
 	case tcell.KeyCtrlF:
 		// Buscar arquivo
@@ -510,11 +506,11 @@ func (a *App) handleKeyEvents(event *tcell.EventKey) *tcell.EventKey {
 		return nil
 	case tcell.KeyCtrlH:
 		// Mostrar/ocultar arquivos ocultos
-		a.toggleHidden()
+		a.toggleHiddenFiles()
 		return nil
 	case tcell.KeyCtrlR:
 		// Atualizar visualização
-		a.refreshView()
+		a.refreshAll()
 		return nil
 	case tcell.KeyCtrlC:
 		// Comparar arquivos selecionados
@@ -530,7 +526,7 @@ func (a *App) handleKeyEvents(event *tcell.EventKey) *tcell.EventKey {
 		return nil
 	case tcell.KeyCtrlY:
 		// Sincronizar diretórios
-		a.syncDirectoriesDialog()
+		a.syncDirectories()
 		return nil
 	case tcell.KeyCtrlS:
 		// Selecionar arquivo
@@ -555,47 +551,46 @@ func (a *App) handleKeyEvents(event *tcell.EventKey) *tcell.EventKey {
 
 // handleFileViewKeys manipula teclas na visualização de arquivos
 func (a *App) handleFileViewKeys(event *tcell.EventKey) *tcell.EventKey {
+	// Verificar teclas de navegação
 	switch event.Key() {
-	case tcell.KeyEnter:
-		// Abrir arquivo ou diretório
-		a.openFile()
+	case tcell.KeyUp:
+		// Mover para cima
+		return event
+	case tcell.KeyDown:
+		// Mover para baixo
+		return event
+	case tcell.KeyPgUp:
+		// Página acima
+		return event
+	case tcell.KeyPgDn:
+		// Página abaixo
+		return event
+	case tcell.KeyHome:
+		// Ir para o início
+		a.fileView.fileList.Select(1, 0)
 		return nil
-	case tcell.KeyF2:
-		// Renomear arquivo
-		a.renameFile()
-		return nil
-	case tcell.KeyF7:
-		// Criar diretório
-		a.createDirectory()
-		return nil
-	case tcell.KeyF8:
-		// Excluir arquivo
-		a.deleteFile()
-		return nil
-	case tcell.KeyTab:
-		// Alternar foco para a árvore
-		a.app.SetFocus(a.treeView.TreeView)
-		return nil
-	case tcell.KeySpace:
-		// Selecionar arquivo atual e mover para o próximo
-		a.toggleSelectionWithSpace()
+	case tcell.KeyEnd:
+		// Ir para o fim
+		a.fileView.fileList.Select(a.fileView.fileList.GetRowCount()-1, 0)
 		return nil
 	}
 
 	// Verificar teclas de letra
-	switch event.Rune() {
-	case 'h':
-		// Alternar exibição de arquivos ocultos
-		a.toggleHidden()
-		return nil
-	case 'r':
-		// Atualizar visualização
-		a.refreshView()
-		return nil
-	case ' ':
-		// Selecionar arquivo atual e mover para o próximo (para teclados que não enviam KeySpace)
-		a.toggleSelectionWithSpace()
-		return nil
+	if event.Key() == tcell.KeyRune {
+		switch event.Rune() {
+		case 'h':
+			// Alternar exibição de arquivos ocultos
+			a.toggleHidden()
+			return nil
+		case 'r':
+			// Atualizar visualização
+			a.refreshView()
+			return nil
+		case ' ':
+			// Selecionar arquivo atual e mover para o próximo (para teclados que não enviam KeySpace)
+			a.toggleSelectionWithSpace()
+			return nil
+		}
 	}
 
 	return event
@@ -633,26 +628,42 @@ func (a *App) navigateToSelectedDirectory() {
 
 // showError exibe uma mensagem de erro
 func (a *App) showError(message string) {
+	// Criar modal de erro
 	modal := tview.NewModal().
 		SetText(message).
 		AddButtons([]string{"OK"}).
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 			a.pages.RemovePage("error")
 		})
-
+	
+	// Configurar cores
+	modal.SetBackgroundColor(ColorBackground)
+	modal.SetTextColor(ColorError)
+	modal.SetButtonBackgroundColor(ColorBorder)
+	modal.SetButtonTextColor(ColorText)
+	
+	// Adicionar à página e mostrar
 	a.pages.AddPage("error", modal, true, true)
 	a.app.SetFocus(modal)
 }
 
 // showMessage exibe uma mensagem informativa
 func (a *App) showMessage(message string) {
+	// Criar modal de mensagem
 	modal := tview.NewModal().
 		SetText(message).
 		AddButtons([]string{"OK"}).
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 			a.pages.RemovePage("message")
 		})
-
+	
+	// Configurar cores
+	modal.SetBackgroundColor(ColorBackground)
+	modal.SetTextColor(ColorText)
+	modal.SetButtonBackgroundColor(ColorBorder)
+	modal.SetButtonTextColor(ColorText)
+	
+	// Adicionar à página e mostrar
 	a.pages.AddPage("message", modal, true, true)
 	a.app.SetFocus(modal)
 }
@@ -666,7 +677,7 @@ func (a *App) refreshView() {
 
 // updateFileList atualiza a lista de arquivos
 func (a *App) updateFileList() {
-	files, err := utils.ListFiles(a.currentDir)
+	files, err := utils.ListFiles(a.currentDir, a.showHidden)
 	if err != nil {
 		a.showError("Erro ao listar arquivos: " + err.Error())
 		return
@@ -691,7 +702,23 @@ func (a *App) syncDirectories() {
 
 // goToDirectory abre o diálogo para ir para um diretório específico
 func (a *App) goToDirectory() {
-	a.showMessage("Ir para diretório não implementado")
+	a.showInputDialog("Ir para Diretório", "", func(path string) {
+		// Verificar se o diretório existe
+		fileInfo, err := os.Stat(path)
+		if err != nil {
+			a.showError(fmt.Sprintf("Erro ao acessar diretório: %s", err))
+			return
+		}
+		
+		// Verificar se é um diretório
+		if !fileInfo.IsDir() {
+			a.showError(fmt.Sprintf("%s não é um diretório", path))
+			return
+		}
+		
+		// Navegar para o diretório
+		a.navigateTo(path)
+	})
 }
 
 // toggleHiddenFiles alterna a exibição de arquivos ocultos
@@ -703,11 +730,6 @@ func (a *App) toggleHiddenFiles() {
 	} else {
 		a.statusBar.SetStatus("Arquivos ocultos: Ocultos")
 	}
-}
-
-// showSystemInfo exibe informações do sistema
-func (a *App) showSystemInfo() {
-	a.showMessage("Informações do sistema não implementadas")
 }
 
 // renameFile abre o diálogo para renomear um arquivo
@@ -734,34 +756,10 @@ func (a *App) toggleFocus() {
 	}
 }
 
-// showMessage exibe uma mensagem na barra de status
-func (a *App) showMessage(msg string) {
-	a.statusBar.SetStatus(msg)
-}
-
-// showError exibe uma mensagem de erro na barra de status
-func (a *App) showError(msg string) {
-	a.statusBar.SetError(msg)
-}
-
 // showHelp exibe a tela de ajuda
 func (a *App) showHelp() {
 	helpView := NewHelpView(a)
-	a.pages.AddAndSwitchToPage("help", helpView.helpView, true)
-}
-
-// addToHistory adiciona um diretório ao histórico
-func (a *App) addToHistory(dir string) {
-	// Se já estamos no final do histórico, adicionar novo item
-	if a.historyPos == len(a.history)-1 {
-		a.history = append(a.history, dir)
-		a.historyPos = len(a.history) - 1
-	} else {
-		// Se não estamos no final, truncar o histórico e adicionar novo item
-		a.history = a.history[:a.historyPos+1]
-		a.history = append(a.history, dir)
-		a.historyPos = len(a.history) - 1
-	}
+	helpView.Show()
 }
 
 // showThemeSelector exibe o seletor de temas
@@ -887,12 +885,13 @@ func (a *App) compareFiles(file1, file2 string) {
 	// Ler conteúdo dos arquivos
 	content1, err := os.ReadFile(file1)
 	if err != nil {
-		a.showError(fmt.Sprintf("Erro ao ler arquivo %s: %s", file1, err))
+		a.showError(fmt.Sprintf("Erro ao ler arquivo %s: %v", file1, err))
 		return
 	}
+	
 	content2, err := os.ReadFile(file2)
 	if err != nil {
-		a.showError(fmt.Sprintf("Erro ao ler arquivo %s: %s", file2, err))
+		a.showError(fmt.Sprintf("Erro ao ler arquivo %s: %v", file2, err))
 		return
 	}
 
@@ -935,4 +934,19 @@ func (a *App) compareFiles(file1, file2 string) {
 		}
 		return event
 	})
+}
+
+// addToHistory adiciona um diretório ao histórico de navegação
+func (a *App) addToHistory(dir string) {
+	// Verificar se o diretório já está no histórico
+	for i, d := range a.history {
+		if d == dir {
+			a.historyPos = i
+			return
+		}
+	}
+	
+	// Adicionar ao histórico
+	a.history = append(a.history, dir)
+	a.historyPos = len(a.history) - 1
 }

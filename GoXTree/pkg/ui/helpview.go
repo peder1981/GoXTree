@@ -51,68 +51,101 @@ func (hv *HelpView) Show() {
 	hv.app.app.SetRoot(hv.pages, true)
 }
 
+// GetRect implementa a interface tview.Primitive
+func (hv *HelpView) GetRect() (int, int, int, int) {
+	return hv.helpView.GetRect()
+}
+
+// SetRect implementa a interface tview.Primitive
+func (hv *HelpView) SetRect(x, y, width, height int) {
+	hv.helpView.SetRect(x, y, width, height)
+}
+
+// Draw implementa a interface tview.Primitive
+func (hv *HelpView) Draw(screen tcell.Screen) {
+	hv.helpView.Draw(screen)
+}
+
+// InputHandler implementa a interface tview.Primitive
+func (hv *HelpView) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+	return hv.helpView.InputHandler()
+}
+
+// Focus implementa a interface tview.Primitive
+func (hv *HelpView) Focus(delegate func(p tview.Primitive)) {
+	hv.helpView.Focus(delegate)
+}
+
+// Blur implementa a interface tview.Primitive
+func (hv *HelpView) Blur() {
+	hv.helpView.Blur()
+}
+
+// HasFocus implementa a interface tview.Primitive
+func (hv *HelpView) HasFocus() bool {
+	return hv.helpView.HasFocus()
+}
+
+// MouseHandler implementa a interface tview.Primitive
+func (hv *HelpView) MouseHandler() func(action tview.MouseAction, event *tcell.EventMouse, setFocus func(p tview.Primitive)) (consumed bool, capture tview.Primitive) {
+	return hv.helpView.MouseHandler()
+}
+
+// PasteHandler implementa a interface tview.Primitive
+func (hv *HelpView) PasteHandler() func(text string) {
+	// Retornar uma função que encapsula o PasteHandler do helpView
+	return func(text string) {
+		if handler := hv.helpView.PasteHandler(); handler != nil {
+			handler(text, nil)
+		}
+	}
+}
+
 // Close fecha a visualização de ajuda
 func (hv *HelpView) Close() {
-	hv.app.pages.RemovePage("help")
+	hv.app.app.SetRoot(hv.app.pages, true)
 }
 
 // getHelpText retorna o texto de ajuda formatado
 func (hv *HelpView) getHelpText() string {
-	return `[yellow]GoXTree - Gerenciador de Arquivos[white]
+	return `[yellow]GoXTree - Ajuda[white]
 
 [yellow]Navegação:[white]
-  [green]Setas[white]        - Mover cursor
-  [green]Enter[white]        - Entrar no diretório / Abrir arquivo
-  [green]Backspace[white]    - Voltar ao diretório pai
-  [green]Tab[white]          - Alternar entre árvore e lista de arquivos
-  [green]ESC[white]          - Voltar / Fechar janela atual
+  - Use as [green]setas[white] para navegar pela lista de arquivos
+  - [green]Enter[white] para entrar em um diretório ou abrir um arquivo
+  - [green]Backspace[white] para voltar ao diretório pai
+  - [green]Home/End[white] para ir para o início/fim da lista
+  - [green]PgUp/PgDn[white] para navegar páginas
 
-[yellow]Teclas de Função:[white]
-  [green]F1[white]           - Mostrar ajuda
-  [green]F2[white]           - Renomear arquivo/diretório
-  [green]F3[white]           - Buscar arquivos
-  [green]F4[white]           - Busca avançada
-  [green]F7[white]           - Criar diretório
-  [green]F8[white]           - Excluir arquivo/diretório
-  [green]F9[white]           - Sincronizar diretórios
-  [green]F10[white]          - Sair
+[yellow]Seleção:[white]
+  - [green]Espaço[white] para selecionar/deselecionar um arquivo
+  - [green]Ins[white] para selecionar um arquivo e mover para o próximo
+  - [green]Ctrl+A[white] para selecionar todos os arquivos
+  - [green]Ctrl+N[white] para deselecionar todos os arquivos
+  - [green]Ctrl+I[white] para inverter a seleção
 
-[yellow]Atalhos Ctrl+Letra:[white]
-  [green]Ctrl+A[white]       - Selecionar todos os arquivos
-  [green]Ctrl+D[white]       - Desmarcar todos os arquivos
-  [green]Ctrl+F[white]       - Buscar arquivo
-  [green]Ctrl+G[white]       - Ir para diretório
-  [green]Ctrl+H[white]       - Alternar arquivos ocultos
-  [green]Ctrl+R[white]       - Atualizar visualização
-  [green]Ctrl+T[white]       - Alternar temas
-  [green]Ctrl+C[white]       - Copiar arquivos selecionados
-  [green]Ctrl+X[white]       - Recortar arquivos selecionados
-  [green]Ctrl+V[white]       - Colar arquivos
-  [green]Ctrl+Q[white]       - Sair
+[yellow]Operações de Arquivo:[white]
+  - [green]F5[white] para copiar arquivos selecionados
+  - [green]F6[white] para mover arquivos selecionados
+  - [green]F7[white] para criar um novo diretório
+  - [green]F8/Del[white] para excluir arquivos selecionados
+  - [green]F9[white] para criar um novo arquivo
 
-[yellow]Atalhos Alt+Letra:[white]
-  [green]Alt+S[white]        - Alternar ordem de classificação
-  [green]Alt+V[white]        - Visualizar arquivo
-  [green]Alt+E[white]        - Editar arquivo
-  [green]Alt+I[white]        - Informações do arquivo
-  [green]Alt+C[white]        - Comparar arquivos selecionados
+[yellow]Visualização:[white]
+  - [green]F3[white] para alternar entre visualização em árvore e lista
+  - [green]F4[white] para alternar entre visualização detalhada e simples
+  - [green]F2[white] para alternar entre ordenação por nome, tamanho, data
+  - [green]h[white] para alternar exibição de arquivos ocultos
+  - [green]r[white] para atualizar a visualização atual
 
-[yellow]Seleção de Arquivos:[white]
-  - Use a [green]Barra de Espaço[white] para selecionar/desmarcar o arquivo atual e mover para o próximo
-  - Use [green]Ctrl+A[white] para selecionar todos os arquivos
-  - Use [green]Ctrl+D[white] para desmarcar todos os arquivos
-  - Os arquivos selecionados são destacados com cores distintas
-  - Use [green]Alt+C[white] para comparar dois arquivos selecionados
+[yellow]Busca:[white]
+  - [green]Ctrl+F[white] para buscar arquivos por nome
+  - [green]Ctrl+G[white] para buscar arquivos por conteúdo
+  - [green]F[white] para busca rápida na lista atual
+  - [green]n[white] para ir para o próximo resultado da busca
+  - [green]N[white] para ir para o resultado anterior da busca
 
-[yellow]Temas Disponíveis:[white]
-  - [green]Retrô[white]: Tema clássico inspirado nos gerenciadores de arquivos DOS
-  - [green]Moderno[white]: Tema moderno com ícones Unicode
-  - [green]Escuro[white]: Tema escuro para ambientes com pouca luz
-  - [green]Claro[white]: Tema claro para ambientes bem iluminados
-  - Use [green]Ctrl+T[white] para abrir o seletor de temas
-
-[yellow]Cores dos Arquivos:[white]
-  Diferentes tipos de arquivos são destacados com cores distintas:
+[yellow]Esquema de Cores:[white]
   * [blue]Diretórios[white] - Azul
   * [green]Executáveis[white] - Verde
   * [magenta]Arquivos compactados[white] - Magenta
@@ -150,42 +183,4 @@ func (hv *HelpView) getHelpText() string {
   de arquivos clássicos com recursos modernos.
 
 Pressione [green]ESC[white] para fechar esta ajuda.`
-}
-
-// showHelp exibe a ajuda
-func (hv *HelpView) showHelp() {
-	// Criar visualizador de texto
-	textView := tview.NewTextView().
-		SetDynamicColors(true).
-		SetRegions(true).
-		SetWordWrap(true).
-		SetChangedFunc(func() {
-			hv.app.app.Draw()
-		})
-	
-	// Configurar texto
-	textView.SetText(hv.getHelpText())
-	
-	// Criar layout
-	flex := tview.NewFlex().
-		SetDirection(tview.FlexRow).
-		AddItem(textView, 0, 1, true).
-		AddItem(tview.NewTextView().
-			SetTextAlign(tview.AlignCenter).
-			SetText("F10/ESC: Sair | ↑/↓: Navegar"), 1, 0, false)
-	
-	// Configurar manipulador de eventos
-	flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyF10, tcell.KeyEscape:
-			// Sair da ajuda
-			hv.app.pages.RemovePage("help")
-			return nil
-		}
-		return event
-	})
-	
-	// Adicionar página
-	hv.app.pages.AddPage("help", flex, true, true)
-	hv.app.app.SetFocus(flex)
 }

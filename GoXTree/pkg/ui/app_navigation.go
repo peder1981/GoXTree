@@ -4,21 +4,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/peder1981/GoXTree/pkg/utils"
 	"github.com/rivo/tview"
 )
-
-// refreshView atualiza as visualizações
-func (a *App) refreshView() {
-	a.treeView.LoadTree(a.currentDir)
-	if err := a.fileView.SetCurrentDir(a.currentDir); err != nil {
-		a.showError(fmt.Sprintf("Erro ao atualizar visualização: %s", err))
-	}
-	a.statusBar.UpdateStatus(a.currentDir)
-}
 
 // refreshTreeView atualiza a árvore de diretórios
 func (a *App) refreshTreeView() {
@@ -86,44 +76,6 @@ func (a *App) goToRoot() {
 	a.navigateTo("/")
 }
 
-// goToDirectory navega para um diretório específico
-func (a *App) goToDirectory() {
-	a.showInputDialog("Ir para Diretório", "Caminho:", func(dirPath string) {
-		if dirPath == "" {
-			return
-		}
-		
-		// Expandir caminho
-		if strings.HasPrefix(dirPath, "~") {
-			homeDir, err := os.UserHomeDir()
-			if err == nil {
-				dirPath = filepath.Join(homeDir, dirPath[1:])
-			}
-		}
-		
-		// Verificar se é um caminho relativo
-		if !filepath.IsAbs(dirPath) {
-			dirPath = filepath.Join(a.currentDir, dirPath)
-		}
-		
-		// Verificar se o diretório existe
-		fileInfo, err := os.Stat(dirPath)
-		if err != nil {
-			a.showError(fmt.Sprintf("Diretório não encontrado: %s", dirPath))
-			return
-		}
-		
-		// Verificar se é um diretório
-		if !fileInfo.IsDir() {
-			a.showError(fmt.Sprintf("O caminho especificado não é um diretório: %s", dirPath))
-			return
-		}
-		
-		// Navegar para o diretório
-		a.navigateTo(dirPath)
-	})
-}
-
 // NavigateToParentDirectory navega para o diretório pai do diretório atual
 func (a *App) NavigateToParentDirectory() {
 	parent := filepath.Dir(a.currentDir)
@@ -159,75 +111,26 @@ func (a *App) NavigateToDirectory(path string) {
 	a.refreshFileView()
 }
 
-// navigateTo navega para o diretório especificado
-func (a *App) navigateTo(dir string) {
-	// Verificar se o diretório existe
-	fileInfo, err := os.Stat(dir)
-	if err != nil {
-		a.showError(fmt.Sprintf("Erro ao acessar diretório: %v", err))
+// navigateBack navega para o diretório anterior no histórico
+func (a *App) navigateBack() {
+	if a.historyPos <= 0 {
+		a.showMessage("Não há histórico anterior")
 		return
 	}
 	
-	// Verificar se é um diretório
-	if !fileInfo.IsDir() {
-		a.showError(fmt.Sprintf("'%s' não é um diretório", dir))
+	a.historyPos--
+	a.NavigateToDirectory(a.history[a.historyPos])
+}
+
+// navigateForward navega para o próximo diretório no histórico
+func (a *App) navigateForward() {
+	if a.historyPos >= len(a.history)-1 {
+		a.showMessage("Não há histórico posterior")
 		return
 	}
 	
-	// Atualizar diretório atual
-	a.currentDir = dir
-	
-	// Carregar arquivos
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		a.showError(fmt.Sprintf("Erro ao ler diretório: %v", err))
-		return
-	}
-	
-	// Filtrar arquivos ocultos se necessário
-	var filteredFiles []os.DirEntry
-	for _, file := range files {
-		if !a.showHidden && strings.HasPrefix(file.Name(), ".") {
-			continue
-		}
-		filteredFiles = append(filteredFiles, file)
-	}
-	
-	// Converter para o formato utils.FileInfo
-	var fileInfos []utils.FileInfo
-	for _, entry := range filteredFiles {
-		info, err := entry.Info()
-		if err != nil {
-			continue
-		}
-		
-		fileInfo := utils.FileInfo{
-			Name:     entry.Name(),
-			Path:     filepath.Join(dir, entry.Name()),
-			Size:     info.Size(),
-			ModTime:  info.ModTime(),
-			IsDir:    entry.IsDir(),
-			IsHidden: strings.HasPrefix(entry.Name(), "."),
-		}
-		
-		if !entry.IsDir() {
-			fileInfo.Extension = strings.ToLower(filepath.Ext(entry.Name()))
-		}
-		
-		fileInfos = append(fileInfos, fileInfo)
-	}
-	
-	// Atualizar visualizações
-	a.fileView.UpdateFileList(fileInfos, a.showHidden)
-	a.treeView.UpdateTreeView(dir)
-	
-	// Atualizar barra de status
-	a.statusBar.SetText(fmt.Sprintf("Diretório: %s", dir))
-	
-	// Adicionar ao histórico se não for navegação no histórico
-	if a.historyPos < 0 || a.history[a.historyPos] != dir {
-		a.addToHistory(dir)
-	}
+	a.historyPos++
+	a.NavigateToDirectory(a.history[a.historyPos])
 }
 
 // openFile abre o arquivo selecionado
@@ -248,7 +151,7 @@ func (a *App) openFile() {
 
 	// Se for um diretório, navegar para ele
 	if fileInfo.IsDir() {
-		a.navigateTo(filePath)
+		a.NavigateToDirectory(filePath)
 		return
 	}
 
@@ -302,30 +205,8 @@ func (a *App) enterDirectory() {
 
 	// Se for um diretório, navegar para ele
 	if fileInfo.IsDir() {
-		a.navigateTo(filePath)
+		a.NavigateToDirectory(filePath)
 	}
-}
-
-// navigateBack navega para o diretório anterior no histórico
-func (a *App) navigateBack() {
-	if a.historyPos <= 0 {
-		a.showMessage("Não há histórico anterior")
-		return
-	}
-	
-	a.historyPos--
-	a.navigateTo(a.history[a.historyPos])
-}
-
-// navigateForward navega para o próximo diretório no histórico
-func (a *App) navigateForward() {
-	if a.historyPos >= len(a.history)-1 {
-		a.showMessage("Não há histórico posterior")
-		return
-	}
-	
-	a.historyPos++
-	a.navigateTo(a.history[a.historyPos])
 }
 
 // showDirectoryHistory exibe o histórico de navegação
@@ -347,7 +228,7 @@ func (a *App) showDirectoryHistory() {
 		historyList.AddItem(dir, "", 0, func() {
 			a.pages.RemovePage("history")
 			a.historyPos = index
-			a.navigateTo(a.history[index])
+			a.NavigateToDirectory(a.history[index])
 		})
 	}
 	

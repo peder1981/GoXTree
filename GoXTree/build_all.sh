@@ -2,12 +2,13 @@
 
 # Script para compilar o GoXTree para múltiplas plataformas
 # Autor: Peder
-# Data: 2025-03-02
+# Data: 2025-03-03
+# Versão: 1.2.0
 
 # Criar diretório de saída se não existir
 mkdir -p bin
 
-echo "Compilando GoXTree para múltiplas plataformas..."
+echo "Compilando GoXTree v1.2.0 para múltiplas plataformas..."
 
 # Linux AMD64
 echo "Compilando para Linux AMD64..."
@@ -32,6 +33,9 @@ chmod +x bin/goxTree-darwin-amd64
 echo "Compilando para macOS ARM64 (Apple Silicon)..."
 CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -o bin/goxTree-darwin-arm64 ./cmd/gxtree/main.go
 chmod +x bin/goxTree-darwin-arm64
+
+# Criar arquivo de versão
+echo "1.2.0" > bin/VERSION
 
 echo "Compilação concluída! Binários disponíveis no diretório bin/"
 echo ""

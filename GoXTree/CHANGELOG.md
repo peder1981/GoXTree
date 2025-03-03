@@ -1,5 +1,28 @@
 # Histórico de Alterações do GoXTree
 
+## [1.2.0] - 2025-03-03
+
+### Corrigido
+- Compatibilidade com a versão mais recente da biblioteca tview
+  - Correção do método PasteHandler() em helpview.go
+  - Remoção de referências a campos inexistentes em tview.Borders (Left, Right, Top, Bottom)
+  - Remoção de referências a tview.TreeGraphics que não existe na versão atual
+- Correção de chamadas de métodos
+  - Substituição de syncDirectoriesDialog() por syncDirectories()
+  - Correção da chamada para textArea.GetText() adicionando o parâmetro necessário
+- Correção de cores
+  - Substituição de tcell.ColorMagenta e tcell.ColorCyan por tcell.NewRGBColor
+  - Correção de referências a ColorSelected
+- Limpeza de código
+  - Remoção de imports não utilizados
+  - Remoção de variáveis declaradas e não utilizadas
+  - Padronização de métodos e funções
+
+### Melhorado
+- Estrutura geral do código
+- Tratamento de erros
+- Desempenho da aplicação
+
 ## [1.1.0] - 2025-03-02
 
 ### Adicionado

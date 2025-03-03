@@ -70,66 +70,13 @@ func (m *MenuBar) handleMenuKey(key tcell.Key) bool {
 		m.app.deleteFile()
 		return true
 	case tcell.KeyF9:
-		m.app.syncDirectoriesDialog()
+		m.app.syncDirectories()
 		return true
 	case tcell.KeyF10:
 		m.app.confirmExit()
 		return true
 	}
 	return false
-}
-
-// showHelp exibe a tela de ajuda
-func (a *App) showHelp() {
-	helpText := `
-GoXTree - Gerenciador de Arquivos
-
-Teclas de Navegação:
-  Setas          - Navegar entre arquivos e diretórios
-  Enter          - Abrir diretório ou arquivo
-  Backspace      - Ir para o diretório pai
-  Alt+Esquerda   - Voltar no histórico
-  Alt+Direita    - Avançar no histórico
-  Tab            - Alternar entre árvore e lista de arquivos
-  Ctrl+G         - Ir para um diretório específico
-  Ctrl+H         - Alternar exibição de arquivos ocultos
-
-Teclas de Função:
-  F1             - Ajuda
-  F2             - Menu
-  F3             - Buscar Simples
-  F4             - Buscar Avançada
-  F5             - Copiar arquivo/diretório
-  F6             - Mover arquivo/diretório
-  F7             - Criar arquivo/diretório
-  F8             - Excluir arquivo/diretório
-  F9             - Sincronizar
-  F10            - Sair
-
-Outras Teclas:
-  Ctrl+R         - Atualizar visualização
-  Ctrl+I         - Informações do sistema
-  Ctrl+F         - Buscar arquivo
-  Ctrl+S         - Ordenar arquivos
-`
-
-	textView := tview.NewTextView().
-		SetText(helpText).
-		SetScrollable(true).
-		SetBorder(true).
-		SetTitle("Ajuda").
-		SetTitleAlign(tview.AlignCenter)
-
-	textView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyEscape || event.Key() == tcell.KeyEnter {
-			a.pages.RemovePage("help")
-			return nil
-		}
-		return event
-	})
-
-	a.pages.AddPage("help", textView, true, true)
-	a.app.SetFocus(textView)
 }
 
 // showMainMenu exibe o menu principal

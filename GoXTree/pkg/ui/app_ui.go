@@ -9,29 +9,6 @@ import (
 	"github.com/rivo/tview"
 )
 
-// showTextDialog exibe um diálogo com texto
-func (a *App) showTextDialog(title, content string) {
-	textView := tview.NewTextView().
-		SetText(content).
-		SetDynamicColors(true).
-		SetScrollable(true).
-		SetWordWrap(true)
-	textView.SetBorder(true).
-		SetTitle(fmt.Sprintf(" %s ", title)).
-		SetTitleAlign(tview.AlignLeft)
-
-	// Configurar manipulador de teclas
-	textView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyEscape {
-			a.pages.RemovePage("textDialog")
-			return nil
-		}
-		return event
-	})
-
-	a.pages.AddPage("textDialog", textView, true, true)
-}
-
 // showInputDialog exibe um diálogo de entrada de texto
 func (a *App) showInputDialog(title, defaultText string, callback func(string)) {
 	// Criar formulário
