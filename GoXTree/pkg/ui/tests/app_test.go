@@ -2,7 +2,7 @@ package ui_test
 
 import (
 	"testing"
-	
+
 	"github.com/peder1981/GoXTree/pkg/ui"
 )
 
@@ -18,7 +18,7 @@ func TestAppInitialization(t *testing.T) {
 	if app == nil {
 		t.Skip("NewApp() returned nil, skipping initialization test")
 	}
-	
+
 	// Verificar se os componentes básicos foram inicializados
 	// Nota: Este teste pode precisar ser adaptado com base na implementação real
 }

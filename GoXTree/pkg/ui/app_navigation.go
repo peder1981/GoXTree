@@ -5,9 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/gdamore/tcell/v2"
 	"github.com/peder1981/GoXTree/pkg/utils"
 	"github.com/rivo/tview"
+
+	"github.com/gdamore/tcell/v2"
 )
 
 // refreshTreeView atualiza a árvore de diretórios
@@ -117,7 +118,7 @@ func (a *App) navigateBack() {
 		a.showMessage("Não há histórico anterior")
 		return
 	}
-	
+
 	a.historyPos--
 	a.NavigateToDirectory(a.history[a.historyPos])
 }
@@ -128,7 +129,7 @@ func (a *App) navigateForward() {
 		a.showMessage("Não há histórico posterior")
 		return
 	}
-	
+
 	a.historyPos++
 	a.NavigateToDirectory(a.history[a.historyPos])
 }
@@ -215,12 +216,12 @@ func (a *App) showDirectoryHistory() {
 		a.showMessage("Histórico de navegação vazio")
 		return
 	}
-	
+
 	historyList := tview.NewList()
 	historyList.SetTitle("Histórico de Navegação").
 		SetTitleAlign(tview.AlignCenter).
 		SetBorder(true)
-	
+
 	// Adicionar diretórios ao histórico (do mais recente para o mais antigo)
 	for i := len(a.history) - 1; i >= 0; i-- {
 		dir := a.history[i]
@@ -231,7 +232,7 @@ func (a *App) showDirectoryHistory() {
 			a.NavigateToDirectory(a.history[index])
 		})
 	}
-	
+
 	historyList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape {
 			a.pages.RemovePage("history")
@@ -239,7 +240,7 @@ func (a *App) showDirectoryHistory() {
 		}
 		return event
 	})
-	
+
 	a.pages.AddPage("history", historyList, true, true)
 	a.app.SetFocus(historyList)
 }

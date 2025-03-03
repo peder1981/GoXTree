@@ -7,9 +7,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gdamore/tcell/v2"
 	"github.com/peder1981/GoXTree/pkg/utils"
 	"github.com/rivo/tview"
+
+	"github.com/gdamore/tcell/v2"
 )
 
 // TextViewer representa um visualizador de texto

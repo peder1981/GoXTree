@@ -11,23 +11,34 @@ import (
 
 	"github.com/peder1981/GoXTreeTester/pkg/analyzer"
 	"github.com/peder1981/GoXTreeTester/pkg/reporter"
+	"path/filepath"
+	"bytes"
+	"os/exec"
 )
 
 // Fixer é responsável por corrigir problemas no código
 type Fixer struct {
-	projectPath string
-	reporter    *reporter.Reporter
+	projectPath     string
+	reporter        *reporter.Reporter
+	specialPackages []string
 }
 
 // NewFixer cria um novo corretor
 func NewFixer(projectPath string, reporter *reporter.Reporter) *Fixer {
 	return &Fixer{
-		projectPath: projectPath,
-		reporter:    reporter,
+		projectPath:     projectPath,
+		reporter:        reporter,
+		specialPackages: []string{"github.com/gdamore/tcell/v2"}, // Pacote tcell é especial por padrão
 	}
 }
 
-// FixIssues corrige problemas identificados
+// SetSpecialPackages define pacotes especiais que devem ser tratados com cuidado
+// durante a remoção de imports não utilizados
+func (f *Fixer) SetSpecialPackages(packages []string) {
+	f.specialPackages = packages
+}
+
+// FixIssues corrige problemas identificados pelo analisador
 func (f *Fixer) FixIssues(issues []analyzer.Issue) (int, error) {
 	fixedCount := 0
 
@@ -38,15 +49,162 @@ func (f *Fixer) FixIssues(issues []analyzer.Issue) (int, error) {
 	}
 
 	// Corrigir cada arquivo
-	for filePath, issues := range fileIssues {
-		fixed, err := f.fixFile(filePath, issues)
+	for file, issues := range fileIssues {
+		fixed, err := f.fixFile(file, issues)
 		if err != nil {
-			return fixedCount, fmt.Errorf("erro ao corrigir arquivo %s: %w", filePath, err)
+			return fixedCount, fmt.Errorf("erro ao corrigir arquivo %s: %w", file, err)
+		}
+		fixedCount += fixed
+	}
+
+	// Corrigir problemas de estilo
+	styleIssues := []analyzer.StyleIssue{}
+	for _, issue := range issues {
+		if strings.Contains(issue.Message, "Espaços em branco no final da linha") ||
+			strings.Contains(issue.Message, "Comentário deve ter espaço após //") {
+			styleIssues = append(styleIssues, analyzer.StyleIssue{
+				File:     issue.File,
+				Line:     issue.Line,
+				Message:  issue.Message,
+				Severity: string(issue.Severity),
+			})
+		}
+	}
+
+	if len(styleIssues) > 0 {
+		styleChecker := analyzer.NewStyleChecker(f.projectPath, f.reporter)
+		fixed, err := styleChecker.FixStyleIssues(styleIssues)
+		if err != nil {
+			return fixedCount, fmt.Errorf("erro ao corrigir problemas de estilo: %w", err)
 		}
 		fixedCount += fixed
 	}
 
 	return fixedCount, nil
+}
+
+// FixUnusedImportsInProject remove imports não utilizados em todo o projeto
+func (f *Fixer) FixUnusedImportsInProject(projectPath string) error {
+	// Encontrar todos os arquivos Go no projeto
+	var goFiles []string
+	err := filepath.Walk(projectPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() && strings.HasSuffix(path, ".go") {
+			goFiles = append(goFiles, path)
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("erro ao percorrer diretório do projeto: %w", err)
+	}
+
+	// Verificar quais arquivos usam tcell diretamente
+	filesThatUseTcell := make(map[string]bool)
+	for _, filePath := range goFiles {
+		content, err := os.ReadFile(filePath)
+		if err != nil {
+			return fmt.Errorf("erro ao ler arquivo %s: %w", filePath, err)
+		}
+		
+		if strings.Contains(string(content), "tcell.") {
+			filesThatUseTcell[filePath] = true
+		}
+	}
+
+	// Corrigir imports não utilizados em cada arquivo
+	for _, filePath := range goFiles {
+		// Se o arquivo usa tcell diretamente, não remover o import tcell
+		if filesThatUseTcell[filePath] {
+			// Verificar se o arquivo importa tcell
+			fset := token.NewFileSet()
+			file, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)
+			if err != nil {
+				return fmt.Errorf("erro ao analisar arquivo %s: %w", filePath, err)
+			}
+			
+			// Verificar se o arquivo importa tcell
+			importsTcell := false
+			for _, imp := range file.Imports {
+				path := strings.Trim(imp.Path.Value, "\"")
+				if path == "github.com/gdamore/tcell/v2" {
+					importsTcell = true
+					break
+				}
+			}
+			
+			// Se o arquivo não importa tcell, adicionar o import
+			if !importsTcell {
+				err = f.addImport(filePath, "github.com/gdamore/tcell/v2")
+				if err != nil {
+					return fmt.Errorf("erro ao adicionar import tcell em %s: %w", filePath, err)
+				}
+				fmt.Printf("Adicionado import tcell em %s\n", filePath)
+				continue
+			}
+		}
+		
+		err := f.FixUnusedImports(filePath)
+		if err != nil {
+			return fmt.Errorf("erro ao corrigir imports não utilizados em %s: %w", filePath, err)
+		}
+	}
+
+	return nil
+}
+
+// addImport adiciona um import a um arquivo
+func (f *Fixer) addImport(filePath, importPath string) error {
+	// Ler o conteúdo do arquivo
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("erro ao ler arquivo %s: %w", filePath, err)
+	}
+	
+	// Converter para string
+	contentStr := string(content)
+	
+	// Verificar se já existe um bloco de import
+	importIndex := strings.Index(contentStr, "import (")
+	if importIndex != -1 {
+		// Encontrar o final do bloco de import
+		endIndex := strings.Index(contentStr[importIndex:], ")")
+		if endIndex != -1 {
+			endIndex += importIndex
+			// Inserir o novo import antes do fechamento do bloco
+			newContent := contentStr[:endIndex] + "\n\t\"" + importPath + "\"" + contentStr[endIndex:]
+			return os.WriteFile(filePath, []byte(newContent), 0644)
+		}
+	}
+	
+	// Se não encontrou um bloco de import, procurar por import único
+	importIndex = strings.Index(contentStr, "import ")
+	if importIndex != -1 {
+		// Encontrar o final da linha
+		endIndex := strings.Index(contentStr[importIndex:], "\n")
+		if endIndex != -1 {
+			endIndex += importIndex
+			// Converter para bloco de import
+			newContent := contentStr[:importIndex] + "import (\n\t" + contentStr[importIndex+7:endIndex] + "\n\t\"" + importPath + "\"\n)" + contentStr[endIndex:]
+			return os.WriteFile(filePath, []byte(newContent), 0644)
+		}
+	}
+	
+	// Se não encontrou nenhum import, adicionar após o package
+	packageIndex := strings.Index(contentStr, "package ")
+	if packageIndex != -1 {
+		// Encontrar o final da linha
+		endIndex := strings.Index(contentStr[packageIndex:], "\n")
+		if endIndex != -1 {
+			endIndex += packageIndex
+			// Adicionar o import após o package
+			newContent := contentStr[:endIndex+1] + "\nimport (\n\t\"" + importPath + "\"\n)\n" + contentStr[endIndex+1:]
+			return os.WriteFile(filePath, []byte(newContent), 0644)
+		}
+	}
+	
+	return fmt.Errorf("não foi possível adicionar import em %s", filePath)
 }
 
 // fixFile corrige problemas em um único arquivo
@@ -435,4 +593,160 @@ func copyFile(src, dst string) error {
 		return err
 	}
 	return os.WriteFile(dst, data, 0644)
+}
+
+// FixUnusedImports remove imports não utilizados do arquivo
+func (f *Fixer) FixUnusedImports(filePath string) error {
+	// Ler o arquivo
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("erro ao ler arquivo %s: %w", filePath, err)
+	}
+
+	// Criar um arquivo temporário
+	tempFile, err := os.CreateTemp(filepath.Dir(filePath), "gxtester-*.go")
+	if err != nil {
+		return fmt.Errorf("erro ao criar arquivo temporário: %w", err)
+	}
+	defer os.Remove(tempFile.Name())
+
+	// Executar o comando goimports para remover imports não utilizados
+	cmd := exec.Command("goimports", "-w", filePath)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		// Se goimports não estiver disponível, tentar usar go fmt
+		cmd = exec.Command("go", "fmt", filePath)
+		output, err = cmd.CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("erro ao executar go fmt: %s: %w", string(output), err)
+		}
+	}
+
+	// Verificar se o arquivo foi modificado
+	newContent, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("erro ao ler arquivo após formatação %s: %w", filePath, err)
+	}
+
+	if bytes.Equal(content, newContent) {
+		// Se o arquivo não foi modificado, tentar remover manualmente
+		return f.manuallyRemoveUnusedImports(filePath)
+	}
+
+	return nil
+}
+
+// manuallyRemoveUnusedImports remove manualmente imports não utilizados
+func (f *Fixer) manuallyRemoveUnusedImports(filePath string) error {
+	// Analisar o arquivo
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)
+	if err != nil {
+		return fmt.Errorf("erro ao analisar arquivo %s: %w", filePath, err)
+	}
+
+	// Verificar imports não utilizados
+	unusedImports := make(map[string]bool)
+	for _, imp := range file.Imports {
+		path := strings.Trim(imp.Path.Value, "\"")
+		
+		// Verificar se o import é um pacote especial
+		isSpecialPackage := false
+		for _, specialPkg := range f.specialPackages {
+			if path == specialPkg {
+				isSpecialPackage = true
+				
+				// Verificar se o arquivo contém referências ao pacote
+				content, err := os.ReadFile(filePath)
+				if err != nil {
+					return fmt.Errorf("erro ao ler arquivo %s: %w", filePath, err)
+				}
+				
+				// Extrair o nome do pacote do caminho completo
+				pkgParts := strings.Split(specialPkg, "/")
+				pkgName := pkgParts[len(pkgParts)-1]
+				
+				// Se o pacote tem versão (v2, v3, etc.), remover
+				if strings.HasPrefix(pkgName, "v") && len(pkgName) <= 3 {
+					pkgName = pkgParts[len(pkgParts)-2]
+				}
+				
+				// Se o arquivo contém referências ao pacote, não remover o import
+				if strings.Contains(string(content), pkgName+".") {
+					isSpecialPackage = false
+					break
+				}
+				
+				unusedImports[path] = true
+				break
+			}
+		}
+		
+		// Se não for um pacote especial, adicionar à lista de imports não utilizados
+		if !isSpecialPackage {
+			// Verificar se o import é usado
+			// Aqui você pode adicionar lógica adicional para verificar se o import é usado
+		}
+	}
+
+	// Se não houver imports não utilizados, retornar
+	if len(unusedImports) == 0 {
+		return nil
+	}
+
+	// Ler o conteúdo do arquivo
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("erro ao ler arquivo %s: %w", filePath, err)
+	}
+	
+	// Converter para string
+	contentStr := string(content)
+	
+	// Remover imports não utilizados
+	var newLines []string
+	inImportBlock := false
+	for _, line := range strings.Split(contentStr, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "import") {
+			if strings.Contains(line, "(") {
+				inImportBlock = true
+				newLines = append(newLines, line)
+				continue
+			} else if strings.Contains(line, "github.com/gdamore/tcell/v2") {
+				// Ignorar linha de import único não utilizado
+				continue
+			}
+		}
+
+		if inImportBlock {
+			if strings.Contains(line, ")") {
+				inImportBlock = false
+				newLines = append(newLines, line)
+				continue
+			}
+
+			// Verificar se a linha contém um import não utilizado
+			isUnused := false
+			for imp := range unusedImports {
+				if strings.Contains(line, imp) {
+					isUnused = true
+					break
+				}
+			}
+
+			if !isUnused {
+				newLines = append(newLines, line)
+			}
+		} else {
+			newLines = append(newLines, line)
+		}
+	}
+
+	// Escrever o conteúdo modificado de volta ao arquivo
+	err = os.WriteFile(filePath, []byte(strings.Join(newLines, "\n")), 0644)
+	if err != nil {
+		return fmt.Errorf("erro ao escrever arquivo %s: %w", filePath, err)
+	}
+
+	return nil
 }

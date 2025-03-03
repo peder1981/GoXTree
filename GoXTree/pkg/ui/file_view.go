@@ -7,9 +7,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gdamore/tcell/v2"
 	"github.com/peder1981/GoXTree/pkg/utils"
 	"github.com/rivo/tview"
+
+	"github.com/gdamore/tcell/v2"
 )
 
 // FileView representa a visualização de arquivos
@@ -297,14 +298,14 @@ func (f *FileView) SelectAll() {
 	if f.app.selectedFiles == nil {
 		f.app.selectedFiles = make(map[string]bool)
 	}
-	
+
 	// Obter lista de arquivos no diretório atual
 	files, err := os.ReadDir(f.currentDir)
 	if err != nil {
 		f.app.showError("Erro ao listar arquivos: " + err.Error())
 		return
 	}
-	
+
 	// Adicionar todos os arquivos à seleção
 	for _, file := range files {
 		if !file.IsDir() {
@@ -312,10 +313,10 @@ func (f *FileView) SelectAll() {
 			f.app.selectedFiles[filePath] = true
 		}
 	}
-	
+
 	// Atualizar visualização
 	f.app.updateFileList()
-	
+
 	// Atualizar barra de status
 	f.app.statusBar.SetStatus(fmt.Sprintf("%d arquivos selecionados", len(f.app.selectedFiles)))
 }
@@ -324,10 +325,10 @@ func (f *FileView) SelectAll() {
 func (f *FileView) UnselectAll() {
 	// Limpar seleção atual
 	f.app.selectedFiles = make(map[string]bool)
-	
+
 	// Atualizar visualização
 	f.app.updateFileList()
-	
+
 	// Atualizar barra de status
 	f.app.statusBar.SetStatus("Seleção removida")
 }
@@ -337,30 +338,30 @@ func (f *FileView) InvertSelection() {
 	if f.app.selectedFiles == nil {
 		f.app.selectedFiles = make(map[string]bool)
 	}
-	
+
 	// Obter lista de arquivos no diretório atual
 	files, err := os.ReadDir(f.currentDir)
 	if err != nil {
 		f.app.showError("Erro ao listar arquivos: " + err.Error())
 		return
 	}
-	
+
 	// Inverter seleção para cada arquivo
 	for _, file := range files {
 		if !file.IsDir() {
 			filePath := filepath.Join(f.currentDir, file.Name())
 			f.app.selectedFiles[filePath] = !f.app.selectedFiles[filePath]
-			
+
 			// Se o arquivo não estiver mais selecionado, remover do mapa
 			if !f.app.selectedFiles[filePath] {
 				delete(f.app.selectedFiles, filePath)
 			}
 		}
 	}
-	
+
 	// Atualizar visualização
 	f.app.updateFileList()
-	
+
 	// Atualizar barra de status
 	f.app.statusBar.SetStatus(fmt.Sprintf("%d arquivos selecionados", len(f.app.selectedFiles)))
 }
@@ -370,27 +371,27 @@ func (f *FileView) SelectByPattern(pattern string) int {
 	if f.app.selectedFiles == nil {
 		f.app.selectedFiles = make(map[string]bool)
 	}
-	
+
 	// Obter lista de arquivos no diretório atual
 	files, err := os.ReadDir(f.currentDir)
 	if err != nil {
 		f.app.showError("Erro ao listar arquivos: " + err.Error())
 		return 0
 	}
-	
+
 	// Converter padrão para expressão regular
 	// Substituir * por .* e ? por .
 	regexPattern := strings.ReplaceAll(pattern, "*", ".*")
 	regexPattern = strings.ReplaceAll(regexPattern, "?", ".")
-	
+
 	// Contar quantos arquivos foram selecionados
 	count := 0
-	
+
 	// Selecionar arquivos que correspondam ao padrão
 	for _, file := range files {
 		if !file.IsDir() {
 			fileName := file.Name()
-			
+
 			// Verificar se o nome do arquivo corresponde ao padrão
 			match, err := filepath.Match(pattern, fileName)
 			if err == nil && match {
@@ -400,10 +401,10 @@ func (f *FileView) SelectByPattern(pattern string) int {
 			}
 		}
 	}
-	
+
 	// Atualizar visualização
 	f.app.updateFileList()
-	
+
 	return count
 }
 
@@ -415,7 +416,7 @@ func (f *FileView) SetSortBy(sortBy string) {
 		f.app.showError("Erro ao listar arquivos: " + err.Error())
 		return
 	}
-	
+
 	// Ordenar arquivos de acordo com o critério
 	switch sortBy {
 	case "name":
@@ -443,7 +444,7 @@ func (f *FileView) SetSortBy(sortBy string) {
 			return files[i].Size > files[j].Size
 		})
 	}
-	
+
 	// Atualizar a visualização
 	f.UpdateFileList(files, f.app.showHidden)
 }
@@ -456,11 +457,11 @@ func GetFileColorByExt(fileName string, isDir bool, isHidden bool) tcell.Color {
 		}
 		return tcell.ColorBlue
 	}
-	
+
 	if isHidden {
 		return tcell.ColorGray
 	}
-	
+
 	// Determinar cor com base na extensão
 	ext := strings.ToLower(filepath.Ext(fileName))
 	switch ext {

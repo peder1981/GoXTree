@@ -5,9 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/gdamore/tcell/v2"
 	"github.com/peder1981/GoXTree/pkg/editor"
 	"github.com/rivo/tview"
+
+	"github.com/gdamore/tcell/v2"
 )
 
 // FileEditor representa o componente de edição de arquivos

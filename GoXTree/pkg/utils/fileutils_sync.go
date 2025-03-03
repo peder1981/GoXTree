@@ -52,11 +52,11 @@ func SyncDirectories(options SyncOptions) ([]SyncAction, error) {
 				}
 			}
 			actions = append(actions, SyncAction{
-				Action:     "create_dir",
-				DestPath:   options.DestDir,
-				IsDir:      true,
-				ModTime:    srcInfo.ModTime(),
-				Reason:     "Diretório de destino não existe",
+				Action:   "create_dir",
+				DestPath: options.DestDir,
+				IsDir:    true,
+				ModTime:  srcInfo.ModTime(),
+				Reason:   "Diretório de destino não existe",
 			})
 		} else {
 			return nil, fmt.Errorf("erro ao acessar diretório de destino: %v", err)
@@ -226,12 +226,12 @@ func SyncDirectories(options SyncOptions) ([]SyncAction, error) {
 			destFullPath := filepath.Join(options.DestDir, relPath)
 
 			actions = append(actions, SyncAction{
-				Action:     "delete",
-				DestPath:   destFullPath,
-				IsDir:      destFile.IsDir,
-				Size:       destFile.Size,
-				ModTime:    destFile.ModTime,
-				Reason:     "Arquivo órfão no destino",
+				Action:   "delete",
+				DestPath: destFullPath,
+				IsDir:    destFile.IsDir,
+				Size:     destFile.Size,
+				ModTime:  destFile.ModTime,
+				Reason:   "Arquivo órfão no destino",
 			})
 
 			if !options.PreviewOnly {

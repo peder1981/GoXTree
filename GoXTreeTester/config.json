@@ -1,0 +1,30 @@
+{
+  "project": {
+    "name": "GoXTree",
+    "path": "/home/peder/my-go-projects/GoXTree",
+    "ignore_patterns": [
+      "vendor/**",
+      "**/*_test.go"
+    ]
+  },
+  "style": {
+    "max_line_length": 100,
+    "check_trailing_whitespace": true,
+    "check_comment_format": true,
+    "check_exported_docs": true
+  },
+  "imports": {
+    "special_packages": [
+      "github.com/gdamore/tcell/v2"
+    ]
+  },
+  "testing": {
+    "timeout": "30s",
+    "ignore_tests": []
+  },
+  "reporting": {
+    "default_report_path": "./report.html",
+    "include_warnings": true,
+    "include_fixes": true
+  }
+}

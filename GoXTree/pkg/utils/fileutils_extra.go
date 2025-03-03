@@ -92,24 +92,24 @@ func CopyDir(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	// Criar diretório de destino com as mesmas permissões
 	err = os.MkdirAll(dst, srcInfo.Mode())
 	if err != nil {
 		return err
 	}
-	
+
 	// Ler o conteúdo do diretório
 	entries, err := os.ReadDir(src)
 	if err != nil {
 		return err
 	}
-	
+
 	// Copiar cada item do diretório
 	for _, entry := range entries {
 		srcPath := filepath.Join(src, entry.Name())
 		dstPath := filepath.Join(dst, entry.Name())
-		
+
 		if entry.IsDir() {
 			// Copiar subdiretório recursivamente
 			err = CopyDir(srcPath, dstPath)
@@ -124,6 +124,6 @@ func CopyDir(src, dst string) error {
 			}
 		}
 	}
-	
+
 	return nil
 }

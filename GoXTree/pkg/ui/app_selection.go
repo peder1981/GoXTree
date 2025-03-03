@@ -8,9 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gdamore/tcell/v2"
 	"github.com/peder1981/GoXTree/pkg/utils"
 	"github.com/rivo/tview"
+
+	"github.com/gdamore/tcell/v2"
 )
 
 // selectAll seleciona todos os arquivos no diretório atual
@@ -19,14 +20,14 @@ func (a *App) selectAll() {
 	if a.selectedFiles == nil {
 		a.selectedFiles = make(map[string]bool)
 	}
-	
+
 	// Obter lista de arquivos no diretório atual
 	files, err := os.ReadDir(a.currentDir)
 	if err != nil {
 		a.showError("Erro ao listar arquivos: " + err.Error())
 		return
 	}
-	
+
 	// Adicionar todos os arquivos à seleção
 	for _, file := range files {
 		if !file.IsDir() {
@@ -34,10 +35,10 @@ func (a *App) selectAll() {
 			a.selectedFiles[filePath] = true
 		}
 	}
-	
+
 	// Atualizar visualização
 	a.refreshFileView()
-	
+
 	// Atualizar barra de status
 	a.statusBar.SetStatus(fmt.Sprintf("%d arquivos selecionados", len(a.selectedFiles)))
 }
@@ -46,10 +47,10 @@ func (a *App) selectAll() {
 func (a *App) unselectAll() {
 	// Limpar seleção atual
 	a.selectedFiles = make(map[string]bool)
-	
+
 	// Atualizar visualização
 	a.refreshFileView()
-	
+
 	// Atualizar barra de status
 	a.statusBar.SetStatus("Seleção removida")
 }
@@ -61,11 +62,11 @@ func (a *App) toggleSelection() {
 	if row <= 1 { // Cabeçalho ou diretório pai
 		return
 	}
-	
+
 	// Obter nome do arquivo
 	fileName := a.fileView.fileList.GetCell(row, 0).Text
 	filePath := filepath.Join(a.currentDir, fileName)
-	
+
 	// Verificar se o arquivo já está selecionado
 	if _, ok := a.selectedFiles[filePath]; ok {
 		// Remover da seleção
@@ -74,10 +75,10 @@ func (a *App) toggleSelection() {
 		// Adicionar à seleção
 		a.selectedFiles[filePath] = true
 	}
-	
+
 	// Atualizar visualização
 	a.refreshFileView()
-	
+
 	// Atualizar barra de status
 	if len(a.selectedFiles) > 0 {
 		a.statusBar.SetStatus(fmt.Sprintf("%d arquivos selecionados", len(a.selectedFiles)))
@@ -93,11 +94,11 @@ func (a *App) toggleSelectionWithSpace() {
 	if row <= 1 { // Cabeçalho ou diretório pai
 		return
 	}
-	
+
 	// Obter nome do arquivo
 	fileName := a.fileView.fileList.GetCell(row, 0).Text
 	filePath := filepath.Join(a.currentDir, fileName)
-	
+
 	// Verificar se o arquivo já está selecionado
 	if _, ok := a.selectedFiles[filePath]; ok {
 		// Remover da seleção
@@ -106,13 +107,13 @@ func (a *App) toggleSelectionWithSpace() {
 		// Adicionar à seleção
 		a.selectedFiles[filePath] = true
 	}
-	
+
 	// Mover para o próximo item
 	a.fileView.fileList.Select(row+1, 0)
-	
+
 	// Atualizar visualização
 	a.refreshFileView()
-	
+
 	// Atualizar barra de status
 	if len(a.selectedFiles) > 0 {
 		a.statusBar.SetStatus(fmt.Sprintf("%d arquivos selecionados", len(a.selectedFiles)))
@@ -128,30 +129,30 @@ func (a *App) viewCurrentFile() {
 	if row <= 1 { // Cabeçalho ou diretório pai
 		return
 	}
-	
+
 	// Obter nome do arquivo
 	fileName := a.fileView.fileList.GetCell(row, 0).Text
 	filePath := filepath.Join(a.currentDir, fileName)
-	
+
 	// Verificar se é um diretório
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
 		a.showError("Erro ao acessar arquivo: " + err.Error())
 		return
 	}
-	
+
 	if fileInfo.IsDir() {
 		a.showMessage("Não é possível visualizar diretórios")
 		return
 	}
-	
+
 	// Ler conteúdo do arquivo
 	content, err := os.ReadFile(filePath)
 	if err != nil {
 		a.showError("Erro ao ler arquivo: " + err.Error())
 		return
 	}
-	
+
 	// Criar visualizador de texto
 	textView := tview.NewTextView().
 		SetDynamicColors(true).
@@ -162,9 +163,9 @@ func (a *App) viewCurrentFile() {
 		SetTitleColor(ColorTitle).
 		SetBorderColor(ColorBorder).
 		SetBackgroundColor(ColorBackground)
-	
+
 	textView.SetBorder(true)
-	
+
 	// Adicionar manipulador de teclas para sair
 	textView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape {
@@ -173,7 +174,7 @@ func (a *App) viewCurrentFile() {
 		}
 		return event
 	})
-	
+
 	// Adicionar à página e mostrar
 	a.pages.AddAndSwitchToPage("view", textView, true)
 }
@@ -186,32 +187,32 @@ func (a *App) editCurrentFile() {
 		a.showMessage("Nenhum arquivo selecionado")
 		return
 	}
-	
+
 	// Obter caminho completo
 	filePath := filepath.Join(a.currentDir, selectedFile)
-	
+
 	// Verificar se é um arquivo
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
 		a.showMessage(fmt.Sprintf("Erro ao acessar arquivo: %v", err))
 		return
 	}
-	
+
 	if fileInfo.IsDir() {
 		a.showMessage("Não é possível editar um diretório")
 		return
 	}
-	
+
 	// Ler conteúdo do arquivo
 	content, err := os.ReadFile(filePath)
 	if err != nil {
 		a.showMessage(fmt.Sprintf("Erro ao ler arquivo: %v", err))
 		return
 	}
-	
+
 	// Criar página de edição
 	editorPage := tview.NewFlex().SetDirection(tview.FlexRow)
-	
+
 	// Criar área de texto
 	textArea := tview.NewTextView().
 		SetText(string(content)).
@@ -220,48 +221,48 @@ func (a *App) editCurrentFile() {
 		SetChangedFunc(func() {
 			a.app.Draw()
 		})
-	
+
 	// Configurar borda
 	textArea.SetBorder(true).
 		SetTitle(fmt.Sprintf(" Editando: %s ", selectedFile)).
 		SetTitleAlign(tview.AlignLeft)
-	
+
 	// Criar botões
 	saveButton := tview.NewButton("Salvar").SetSelectedFunc(func() {
 		// Obter conteúdo editado
 		newContent := textArea.GetText(true)
-		
+
 		// Salvar arquivo
 		err := os.WriteFile(filePath, []byte(newContent), 0644)
 		if err != nil {
 			a.showError(fmt.Sprintf("Erro ao salvar arquivo: %v", err))
 			return
 		}
-		
+
 		// Voltar à visualização principal
 		a.pages.RemovePage("editor")
 		a.refreshView()
 		a.showMessage("Arquivo salvo com sucesso")
 	})
-	
+
 	cancelButton := tview.NewButton("Cancelar").SetSelectedFunc(func() {
 		// Voltar à visualização principal
 		a.pages.RemovePage("editor")
 	})
-	
+
 	// Criar layout de botões
 	buttons := tview.NewFlex().
 		AddItem(saveButton, 0, 1, false).
 		AddItem(nil, 1, 0, false).
 		AddItem(cancelButton, 0, 1, false)
-	
+
 	// Adicionar componentes à página
 	editorPage.AddItem(textArea, 0, 1, true)
 	editorPage.AddItem(buttons, 1, 0, false)
-	
+
 	// Adicionar página ao aplicativo
 	a.pages.AddPage("editor", editorPage, true, true)
-	
+
 	// Configurar manipulador de teclas
 	editorPage.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape {
@@ -279,10 +280,10 @@ func (a *App) copySelectedFiles() {
 		a.showMessage("Nenhum arquivo selecionado")
 		return
 	}
-	
+
 	// Definir operação como cópia
 	a.clipboard = "copy"
-	
+
 	// Atualizar barra de status
 	a.statusBar.SetStatus(fmt.Sprintf("%d arquivos copiados para a área de transferência", len(a.selectedFiles)))
 }
@@ -294,10 +295,10 @@ func (a *App) cutSelectedFiles() {
 		a.showMessage("Nenhum arquivo selecionado")
 		return
 	}
-	
+
 	// Definir operação como recorte
 	a.clipboard = "cut"
-	
+
 	// Atualizar barra de status
 	a.statusBar.SetStatus(fmt.Sprintf("%d arquivos recortados para a área de transferência", len(a.selectedFiles)))
 }
@@ -309,18 +310,18 @@ func (a *App) pasteFiles() {
 		a.showMessage("Nenhum arquivo na área de transferência")
 		return
 	}
-	
+
 	// Contar arquivos processados
 	processed := 0
-	
+
 	// Processar cada arquivo selecionado
 	for filePath := range a.selectedFiles {
 		// Obter nome do arquivo
 		fileName := filepath.Base(filePath)
-		
+
 		// Definir caminho de destino
 		destPath := filepath.Join(a.currentDir, fileName)
-		
+
 		// Verificar se o arquivo já existe no destino
 		if _, err := os.Stat(destPath); err == nil {
 			// Perguntar se deseja sobrescrever
@@ -328,28 +329,28 @@ func (a *App) pasteFiles() {
 				if !confirmed {
 					return
 				}
-				
+
 				// Continuar com a cópia
 				a.doCopy(filePath, destPath, false)
-				
+
 				a.refreshView()
 			})
 		} else {
 			// Copiar arquivo
 			a.doCopy(filePath, destPath, false)
-			
+
 			a.refreshView()
 		}
-		
+
 		processed++
 	}
-	
+
 	// Limpar seleção
 	a.selectedFiles = make(map[string]bool)
-	
+
 	// Atualizar visualização
 	a.refreshFileView()
-	
+
 	// Atualizar barra de status
 	a.statusBar.SetStatus(fmt.Sprintf("%d arquivos processados", processed))
 }
@@ -360,14 +361,14 @@ func (a *App) invertSelection() {
 	if a.selectedFiles == nil {
 		a.selectedFiles = make(map[string]bool)
 	}
-	
+
 	// Obter lista de arquivos no diretório atual
 	files, err := os.ReadDir(a.currentDir)
 	if err != nil {
 		a.showError("Erro ao listar arquivos: " + err.Error())
 		return
 	}
-	
+
 	// Inverter seleção
 	for _, file := range files {
 		if !file.IsDir() {
@@ -375,7 +376,7 @@ func (a *App) invertSelection() {
 			a.selectedFiles[filePath] = !a.selectedFiles[filePath]
 		}
 	}
-	
+
 	// Atualizar visualização
 	a.refreshFileView()
 	a.statusBar.SetText(fmt.Sprintf("Selecionados %d arquivos", len(a.selectedFiles)))
@@ -387,31 +388,31 @@ func (a *App) selectByPattern() {
 		if pattern == "" {
 			return
 		}
-		
+
 		// Compilar expressão regular
 		regex, err := regexp.Compile(pattern)
 		if err != nil {
 			a.showError(fmt.Sprintf("Padrão inválido: %v", err))
 			return
 		}
-		
+
 		// Obter lista de arquivos
 		files, err := os.ReadDir(a.currentDir)
 		if err != nil {
 			a.showError("Erro ao ler diretório: " + err.Error())
 			return
 		}
-		
+
 		// Contar arquivos selecionados
 		count := 0
-		
+
 		// Selecionar arquivos que correspondem ao padrão
 		for _, file := range files {
 			// Ignorar diretório pai
 			if file.Name() == ".." {
 				continue
 			}
-			
+
 			// Verificar se corresponde ao padrão
 			if regex.MatchString(file.Name()) {
 				// Adicionar à seleção
@@ -420,7 +421,7 @@ func (a *App) selectByPattern() {
 				count++
 			}
 		}
-		
+
 		// Atualizar visualização
 		a.refreshFileView()
 		a.statusBar.SetText(fmt.Sprintf("Selecionados %d arquivos", count))
@@ -434,32 +435,32 @@ func (a *App) showSelectionMenu() {
 	menu.SetTitle("Seleção").
 		SetTitleAlign(tview.AlignCenter).
 		SetBorder(true)
-	
+
 	// Adicionar itens ao menu
 	menu.AddItem("Selecionar Todos", "Seleciona todos os arquivos", 't', func() {
 		a.pages.RemovePage("selectionMenu")
 		a.selectAll()
 	})
-	
+
 	menu.AddItem("Desmarcar Todos", "Remove todas as seleções", 'd', func() {
 		a.pages.RemovePage("selectionMenu")
 		a.unselectAll()
 	})
-	
+
 	menu.AddItem("Inverter Seleção", "Inverte a seleção atual", 'i', func() {
 		a.pages.RemovePage("selectionMenu")
 		a.invertSelection()
 	})
-	
+
 	menu.AddItem("Selecionar por Padrão", "Seleciona arquivos por padrão", 'p', func() {
 		a.pages.RemovePage("selectionMenu")
 		a.selectByPattern()
 	})
-	
+
 	menu.AddItem("Voltar", "Volta ao gerenciador de arquivos", 'v', func() {
 		a.pages.RemovePage("selectionMenu")
 	})
-	
+
 	// Configurar manipulador de eventos
 	menu.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape {
@@ -468,7 +469,7 @@ func (a *App) showSelectionMenu() {
 		}
 		return event
 	})
-	
+
 	// Adicionar página
 	a.pages.AddPage("selectionMenu", menu, true, true)
 	a.app.SetFocus(menu)
@@ -500,18 +501,18 @@ func (a *App) showSelectedFilesInfo() {
 		a.showMessage("Nenhum arquivo selecionado")
 		return
 	}
-	
+
 	// Calcular estatísticas
 	var (
-		totalSize    int64
-		fileCount    int
-		dirCount     int
-		newestTime   time.Time
-		oldestTime   time.Time
-		newestFile   string
-		oldestFile   string
+		totalSize  int64
+		fileCount  int
+		dirCount   int
+		newestTime time.Time
+		oldestTime time.Time
+		newestFile string
+		oldestFile string
 	)
-	
+
 	// Processar arquivos selecionados
 	for file := range a.selectedFiles {
 		// Obter informações do arquivo
@@ -519,7 +520,7 @@ func (a *App) showSelectedFilesInfo() {
 		if err != nil {
 			continue
 		}
-		
+
 		// Atualizar estatísticas
 		if info.IsDir() {
 			dirCount++
@@ -527,37 +528,37 @@ func (a *App) showSelectedFilesInfo() {
 			fileCount++
 			totalSize += info.Size()
 		}
-		
+
 		// Verificar data de modificação
 		modTime := info.ModTime()
 		if newestTime.IsZero() || modTime.After(newestTime) {
 			newestTime = modTime
 			newestFile = filepath.Base(file)
 		}
-		
+
 		if oldestTime.IsZero() || modTime.Before(oldestTime) {
 			oldestTime = modTime
 			oldestFile = filepath.Base(file)
 		}
 	}
-	
+
 	// Criar texto de informações
 	var text strings.Builder
 	text.WriteString(fmt.Sprintf("Arquivos selecionados: %d\n", len(a.selectedFiles)))
 	text.WriteString(fmt.Sprintf("Arquivos: %d\n", fileCount))
 	text.WriteString(fmt.Sprintf("Diretórios: %d\n", dirCount))
 	text.WriteString(fmt.Sprintf("Tamanho total: %s\n", utils.FormatFileSize(totalSize)))
-	
+
 	if newestFile != "" {
 		text.WriteString(fmt.Sprintf("\nArquivo mais recente: %s\n", newestFile))
 		text.WriteString(fmt.Sprintf("Data: %s\n", newestTime.Format("02/01/2006 15:04:05")))
 	}
-	
+
 	if oldestFile != "" {
 		text.WriteString(fmt.Sprintf("\nArquivo mais antigo: %s\n", oldestFile))
 		text.WriteString(fmt.Sprintf("Data: %s\n", oldestTime.Format("02/01/2006 15:04:05")))
 	}
-	
+
 	// Exibir informações
 	a.showTextDialog("Informações da Seleção", text.String())
 }
@@ -571,7 +572,7 @@ func (a *App) showTextDialog(title, text string) {
 		SetTitle(title).
 		SetTitleAlign(tview.AlignCenter).
 		SetBorder(true)
-	
+
 	// Configurar manipulador de eventos
 	textView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape || event.Key() == tcell.KeyEnter {
@@ -580,7 +581,7 @@ func (a *App) showTextDialog(title, text string) {
 		}
 		return event
 	})
-	
+
 	// Adicionar página
 	a.pages.AddPage("textDialog", textView, true, true)
 	a.app.SetFocus(textView)

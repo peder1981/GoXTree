@@ -7,10 +7,11 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/gdamore/tcell/v2"
 	"github.com/peder1981/GoXTree/pkg/utils"
 	"github.com/rivo/tview"
 	"github.com/sergi/go-diff/diffmatchpatch"
+
+	"github.com/gdamore/tcell/v2"
 )
 
 // App representa a aplicação principal
@@ -108,18 +109,18 @@ func NewApp() *App {
 
 	// Adicionar menu bar ao topo
 	app.mainLayout.AddItem(app.menuBar.menuBar, 1, 0, false)
-	
+
 	// Criar layout horizontal para árvore e lista de arquivos
 	horizontalLayout := tview.NewFlex().SetDirection(tview.FlexColumn)
 	horizontalLayout.AddItem(app.treeView.TreeView, 0, 1, true)
 	horizontalLayout.AddItem(app.fileView.fileList, 0, 2, false)
-	
+
 	// Adicionar o layout horizontal ao layout principal
 	app.mainLayout.AddItem(horizontalLayout, 0, 1, true)
-	
+
 	// Adicionar barra de status
 	app.mainLayout.AddItem(app.statusBar.statusBar, 2, 0, false)
-	
+
 	// Adicionar barra de função na parte inferior
 	app.mainLayout.AddItem(functionBar, 1, 0, false)
 
@@ -364,7 +365,7 @@ Pressione [green]ESC[white] para fechar esta janela.`,
 		"N/A", // TODO: Obter memória utilizada
 		"N/A", // TODO: Obter tempo de execução
 	)
-	
+
 	// Criar visualização de texto
 	textView := tview.NewTextView().
 		SetText(info).
@@ -375,10 +376,10 @@ Pressione [green]ESC[white] para fechar esta janela.`,
 		SetTitleAlign(tview.AlignLeft).
 		SetBorderColor(tcell.ColorBlue).
 		SetBackgroundColor(tcell.ColorBlack)
-	
+
 	// Configurar cores
 	textView.SetBorder(true)
-	
+
 	// Adicionar manipulador de teclas para sair
 	textView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape {
@@ -387,7 +388,7 @@ Pressione [green]ESC[white] para fechar esta janela.`,
 		}
 		return event
 	})
-	
+
 	// Adicionar à página e mostrar
 	a.pages.AddAndSwitchToPage("systemInfo", textView, true)
 }
@@ -447,13 +448,13 @@ func (a *App) navigateTo(dir string) {
 		a.showError(fmt.Sprintf("Erro ao acessar diretório: %s", err))
 		return
 	}
-	
+
 	// Verificar se é um diretório
 	if !fileInfo.IsDir() {
 		a.showError(fmt.Sprintf("%s não é um diretório", dir))
 		return
 	}
-	
+
 	// Navegar para o diretório
 	a.currentDir = dir
 	a.treeView.LoadTree(dir)
@@ -476,9 +477,9 @@ func (a *App) handleKeyEvents(event *tcell.EventKey) *tcell.EventKey {
 		return nil
 	case tcell.KeyEscape:
 		// Verificar se estamos na tela principal ou em uma tela de diálogo
-		if a.pages.HasPage("textDialog") || a.pages.HasPage("inputDialog") || 
-		   a.pages.HasPage("helpDialog") || a.pages.HasPage("menuDialog") || 
-		   a.pages.HasPage("gotoDialog") || a.pages.HasPage("input") {
+		if a.pages.HasPage("textDialog") || a.pages.HasPage("inputDialog") ||
+			a.pages.HasPage("helpDialog") || a.pages.HasPage("menuDialog") ||
+			a.pages.HasPage("gotoDialog") || a.pages.HasPage("input") {
 			// Se estamos em uma tela de diálogo, apenas fechar o diálogo
 			return event // Deixar o manipulador específico da página tratar o evento
 		} else if len(a.history) > 1 && a.historyPos > 0 {
@@ -636,13 +637,13 @@ func (a *App) showError(message string) {
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 			a.pages.RemovePage("error")
 		})
-	
+
 	// Configurar cores
 	modal.SetBackgroundColor(ColorBackground)
 	modal.SetTextColor(ColorError)
 	modal.SetButtonBackgroundColor(ColorBorder)
 	modal.SetButtonTextColor(ColorText)
-	
+
 	// Adicionar à página e mostrar
 	a.pages.AddPage("error", modal, true, true)
 	a.app.SetFocus(modal)
@@ -657,13 +658,13 @@ func (a *App) showMessage(message string) {
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 			a.pages.RemovePage("message")
 		})
-	
+
 	// Configurar cores
 	modal.SetBackgroundColor(ColorBackground)
 	modal.SetTextColor(ColorText)
 	modal.SetButtonBackgroundColor(ColorBorder)
 	modal.SetButtonTextColor(ColorText)
-	
+
 	// Adicionar à página e mostrar
 	a.pages.AddPage("message", modal, true, true)
 	a.app.SetFocus(modal)
@@ -710,13 +711,13 @@ func (a *App) goToDirectory() {
 			a.showError(fmt.Sprintf("Erro ao acessar diretório: %s", err))
 			return
 		}
-		
+
 		// Verificar se é um diretório
 		if !fileInfo.IsDir() {
 			a.showError(fmt.Sprintf("%s não é um diretório", path))
 			return
 		}
-		
+
 		// Navegar para o diretório
 		a.navigateTo(path)
 	})
@@ -741,31 +742,31 @@ func (a *App) renameFile() {
 		a.showError("Nenhum arquivo selecionado")
 		return
 	}
-	
+
 	// Obter caminho completo
 	oldPath := filepath.Join(a.currentDir, selectedFile)
-	
+
 	// Verificar se o arquivo existe
 	if _, err := os.Stat(oldPath); err != nil {
 		a.showError(fmt.Sprintf("Erro ao acessar arquivo: %v", err))
 		return
 	}
-	
+
 	// Exibir diálogo para novo nome
 	a.showInputDialogWithValue("Renomear", selectedFile, func(newName string) {
 		if newName == "" || newName == selectedFile {
 			return
 		}
-		
+
 		// Verificar se o nome contém caracteres inválidos
 		if strings.ContainsAny(newName, "\\/:*?\"<>|") {
 			a.showError("O nome contém caracteres inválidos")
 			return
 		}
-		
+
 		// Criar caminho completo para o novo nome
 		newPath := filepath.Join(a.currentDir, newName)
-		
+
 		// Verificar se já existe um arquivo com o novo nome
 		if _, err := os.Stat(newPath); err == nil {
 			a.showConfirmDialog("Confirmar substituição", fmt.Sprintf("Já existe um arquivo ou diretório com o nome '%s'. Deseja substituí-lo?", newName), func(confirmed bool) {
@@ -775,13 +776,13 @@ func (a *App) renameFile() {
 						a.showError(fmt.Sprintf("Erro ao remover arquivo existente: %v", err))
 						return
 					}
-					
+
 					// Renomear arquivo
 					if err := os.Rename(oldPath, newPath); err != nil {
 						a.showError(fmt.Sprintf("Erro ao renomear: %v", err))
 						return
 					}
-					
+
 					a.refreshCurrentDir()
 					a.showMessage(fmt.Sprintf("'%s' renomeado para '%s'", selectedFile, newName))
 				}
@@ -792,7 +793,7 @@ func (a *App) renameFile() {
 				a.showError(fmt.Sprintf("Erro ao renomear: %v", err))
 				return
 			}
-			
+
 			a.refreshCurrentDir()
 			a.showMessage(fmt.Sprintf("'%s' renomeado para '%s'", selectedFile, newName))
 		}
@@ -950,7 +951,7 @@ func (a *App) compareFiles(file1, file2 string) {
 		a.showError(fmt.Sprintf("Erro ao ler arquivo %s: %v", file1, err))
 		return
 	}
-	
+
 	content2, err := os.ReadFile(file2)
 	if err != nil {
 		a.showError(fmt.Sprintf("Erro ao ler arquivo %s: %v", file2, err))
@@ -1037,24 +1038,24 @@ func (a *App) showPreferences() {
 	form.SetTitle("Preferências").
 		SetTitleAlign(tview.AlignCenter).
 		SetBorder(true)
-	
+
 	showHidden := a.showHidden
-	
+
 	form.AddCheckbox("Mostrar arquivos ocultos", showHidden, func(checked bool) {
 		showHidden = checked
 	})
-	
+
 	form.AddButton("Salvar", func() {
 		a.showHidden = showHidden
 		a.refreshCurrentDir()
 		a.pages.RemovePage("preferences")
 		a.showMessage("Preferências salvas")
 	})
-	
+
 	form.AddButton("Cancelar", func() {
 		a.pages.RemovePage("preferences")
 	})
-	
+
 	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape {
 			a.pages.RemovePage("preferences")
@@ -1062,7 +1063,7 @@ func (a *App) showPreferences() {
 		}
 		return event
 	})
-	
+
 	a.pages.AddPage("preferences", tview.NewFlex().
 		AddItem(nil, 0, 1, false).
 		AddItem(tview.NewFlex().

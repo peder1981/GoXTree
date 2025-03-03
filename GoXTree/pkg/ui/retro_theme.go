@@ -1,8 +1,9 @@
 package ui
 
 import (
-	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+
+	"github.com/gdamore/tcell/v2"
 )
 
 // Cores retrô inspiradas em terminais DOS
@@ -19,21 +20,21 @@ var (
 
 // Caracteres ASCII para bordas
 const (
-	BorderHorizontal      = '-'
-	BorderVertical        = '|'
-	BorderTopLeft         = '+'
-	BorderTopRight        = '+'
-	BorderBottomLeft      = '+'
-	BorderBottomRight     = '+'
-	TreeVerticalLine      = '|'
-	TreeHorizontalLine    = '-'
-	TreeCorner            = '+'
-	TreeContinueCorner    = '+'
-	TreeEndCorner         = '+'
-	TreeDirectory         = '['
-	TreeDirectoryOpen     = '['
-	TreeDirectoryClosed   = ']'
-	TreeFile              = ' '
+	BorderHorizontal    = '-'
+	BorderVertical      = '|'
+	BorderTopLeft       = '+'
+	BorderTopRight      = '+'
+	BorderBottomLeft    = '+'
+	BorderBottomRight   = '+'
+	TreeVerticalLine    = '|'
+	TreeHorizontalLine  = '-'
+	TreeCorner          = '+'
+	TreeContinueCorner  = '+'
+	TreeEndCorner       = '+'
+	TreeDirectory       = '['
+	TreeDirectoryOpen   = '['
+	TreeDirectoryClosed = ']'
+	TreeFile            = ' '
 )
 
 // ApplyRetroTheme aplica o tema retrô à aplicação
@@ -80,7 +81,7 @@ func ApplyRetroThemeToApp(a *App) {
 	a.fileView.fileList.SetTitleColor(ColorTitle)
 	a.fileView.fileList.SetTitle(" Arquivos ")
 	a.fileView.fileList.SetBorder(true)
-	
+
 	// Personalizar cabeçalhos da tabela de arquivos
 	a.fileView.fileList.SetCell(0, 0, tview.NewTableCell("Nome").
 		SetTextColor(ColorHeader).SetAlign(tview.AlignLeft).SetSelectable(false))
@@ -149,7 +150,7 @@ func ApplyModernThemeToApp(a *App) {
 	a.fileView.fileList.SetTitleColor(modernTitle)
 	a.fileView.fileList.SetTitle(" Arquivos ")
 	a.fileView.fileList.SetBorder(true)
-	
+
 	// Personalizar cabeçalhos da tabela de arquivos
 	a.fileView.fileList.SetCell(0, 0, tview.NewTableCell("Nome").
 		SetTextColor(modernHeader).SetAlign(tview.AlignLeft).SetSelectable(false))
@@ -218,7 +219,7 @@ func ApplyDarkThemeToApp(a *App) {
 	a.fileView.fileList.SetTitleColor(darkTitle)
 	a.fileView.fileList.SetTitle(" Arquivos ")
 	a.fileView.fileList.SetBorder(true)
-	
+
 	// Personalizar cabeçalhos da tabela de arquivos
 	a.fileView.fileList.SetCell(0, 0, tview.NewTableCell("Nome").
 		SetTextColor(darkHeader).SetAlign(tview.AlignLeft).SetSelectable(false))
@@ -287,7 +288,7 @@ func ApplyLightThemeToApp(a *App) {
 	a.fileView.fileList.SetTitleColor(lightTitle)
 	a.fileView.fileList.SetTitle(" Arquivos ")
 	a.fileView.fileList.SetBorder(true)
-	
+
 	// Personalizar cabeçalhos da tabela de arquivos
 	a.fileView.fileList.SetCell(0, 0, tview.NewTableCell("Nome").
 		SetTextColor(lightHeader).SetAlign(tview.AlignLeft).SetSelectable(false))
@@ -312,220 +313,220 @@ func ApplyLightThemeToApp(a *App) {
 // GetRetroColorScheme retorna um esquema de cores retrô para diferentes tipos de arquivos
 func GetRetroColorScheme() map[string]tcell.Color {
 	return map[string]tcell.Color{
-		"dir":      tcell.ColorYellow,
-		"exe":      tcell.ColorGreen,
-		"zip":      tcell.NewRGBColor(255, 0, 255),
-		"tar":      tcell.NewRGBColor(255, 0, 255),
-		"gz":       tcell.NewRGBColor(255, 0, 255),
-		"rar":      tcell.NewRGBColor(255, 0, 255),
-		"7z":       tcell.NewRGBColor(255, 0, 255),
-		"txt":      tcell.ColorWhite,
-		"md":       tcell.ColorWhite,
-		"go":       tcell.NewRGBColor(0, 255, 255),
-		"c":        tcell.NewRGBColor(0, 255, 255),
-		"cpp":      tcell.NewRGBColor(0, 255, 255),
-		"h":        tcell.NewRGBColor(0, 255, 255),
-		"py":       tcell.NewRGBColor(0, 255, 255),
-		"js":       tcell.NewRGBColor(0, 255, 255),
-		"html":     tcell.NewRGBColor(0, 255, 255),
-		"css":      tcell.NewRGBColor(0, 255, 255),
-		"json":     tcell.NewRGBColor(0, 255, 255),
-		"xml":      tcell.NewRGBColor(0, 255, 255),
-		"yaml":     tcell.NewRGBColor(0, 255, 255),
-		"yml":      tcell.NewRGBColor(0, 255, 255),
-		"toml":     tcell.NewRGBColor(0, 255, 255),
-		"ini":      tcell.NewRGBColor(0, 255, 255),
-		"conf":     tcell.NewRGBColor(0, 255, 255),
-		"sh":       tcell.ColorGreen,
-		"bat":      tcell.ColorGreen,
-		"cmd":      tcell.ColorGreen,
-		"ps1":      tcell.ColorGreen,
-		"jpg":      tcell.ColorRed,
-		"jpeg":     tcell.ColorRed,
-		"png":      tcell.ColorRed,
-		"gif":      tcell.ColorRed,
-		"bmp":      tcell.ColorRed,
-		"svg":      tcell.ColorRed,
-		"mp3":      tcell.NewRGBColor(255, 0, 255),
-		"wav":      tcell.NewRGBColor(255, 0, 255),
-		"ogg":      tcell.NewRGBColor(255, 0, 255),
-		"mp4":      tcell.NewRGBColor(255, 0, 255),
-		"avi":      tcell.NewRGBColor(255, 0, 255),
-		"mkv":      tcell.NewRGBColor(255, 0, 255),
-		"pdf":      tcell.ColorRed,
-		"doc":      tcell.NewRGBColor(0, 255, 255),
-		"docx":     tcell.NewRGBColor(0, 255, 255),
-		"xls":      tcell.ColorGreen,
-		"xlsx":     tcell.ColorGreen,
-		"ppt":      tcell.ColorYellow,
-		"pptx":     tcell.ColorYellow,
-		"hidden":   tcell.ColorGray,
-		"default":  tcell.ColorWhite,
+		"dir":     tcell.ColorYellow,
+		"exe":     tcell.ColorGreen,
+		"zip":     tcell.NewRGBColor(255, 0, 255),
+		"tar":     tcell.NewRGBColor(255, 0, 255),
+		"gz":      tcell.NewRGBColor(255, 0, 255),
+		"rar":     tcell.NewRGBColor(255, 0, 255),
+		"7z":      tcell.NewRGBColor(255, 0, 255),
+		"txt":     tcell.ColorWhite,
+		"md":      tcell.ColorWhite,
+		"go":      tcell.NewRGBColor(0, 255, 255),
+		"c":       tcell.NewRGBColor(0, 255, 255),
+		"cpp":     tcell.NewRGBColor(0, 255, 255),
+		"h":       tcell.NewRGBColor(0, 255, 255),
+		"py":      tcell.NewRGBColor(0, 255, 255),
+		"js":      tcell.NewRGBColor(0, 255, 255),
+		"html":    tcell.NewRGBColor(0, 255, 255),
+		"css":     tcell.NewRGBColor(0, 255, 255),
+		"json":    tcell.NewRGBColor(0, 255, 255),
+		"xml":     tcell.NewRGBColor(0, 255, 255),
+		"yaml":    tcell.NewRGBColor(0, 255, 255),
+		"yml":     tcell.NewRGBColor(0, 255, 255),
+		"toml":    tcell.NewRGBColor(0, 255, 255),
+		"ini":     tcell.NewRGBColor(0, 255, 255),
+		"conf":    tcell.NewRGBColor(0, 255, 255),
+		"sh":      tcell.ColorGreen,
+		"bat":     tcell.ColorGreen,
+		"cmd":     tcell.ColorGreen,
+		"ps1":     tcell.ColorGreen,
+		"jpg":     tcell.ColorRed,
+		"jpeg":    tcell.ColorRed,
+		"png":     tcell.ColorRed,
+		"gif":     tcell.ColorRed,
+		"bmp":     tcell.ColorRed,
+		"svg":     tcell.ColorRed,
+		"mp3":     tcell.NewRGBColor(255, 0, 255),
+		"wav":     tcell.NewRGBColor(255, 0, 255),
+		"ogg":     tcell.NewRGBColor(255, 0, 255),
+		"mp4":     tcell.NewRGBColor(255, 0, 255),
+		"avi":     tcell.NewRGBColor(255, 0, 255),
+		"mkv":     tcell.NewRGBColor(255, 0, 255),
+		"pdf":     tcell.ColorRed,
+		"doc":     tcell.NewRGBColor(0, 255, 255),
+		"docx":    tcell.NewRGBColor(0, 255, 255),
+		"xls":     tcell.ColorGreen,
+		"xlsx":    tcell.ColorGreen,
+		"ppt":     tcell.ColorYellow,
+		"pptx":    tcell.ColorYellow,
+		"hidden":  tcell.ColorGray,
+		"default": tcell.ColorWhite,
 	}
 }
 
 // GetModernColorScheme retorna um esquema de cores moderno para diferentes tipos de arquivos
 func GetModernColorScheme() map[string]tcell.Color {
 	return map[string]tcell.Color{
-		"dir":      tcell.ColorBlue,
-		"exe":      tcell.ColorGreen,
-		"zip":      tcell.ColorPurple,
-		"tar":      tcell.ColorPurple,
-		"gz":       tcell.ColorPurple,
-		"rar":      tcell.ColorPurple,
-		"7z":       tcell.ColorPurple,
-		"txt":      tcell.ColorBlack,
-		"md":       tcell.ColorBlack,
-		"go":       tcell.ColorTeal,
-		"c":        tcell.ColorTeal,
-		"cpp":      tcell.ColorTeal,
-		"h":        tcell.ColorTeal,
-		"py":       tcell.ColorTeal,
-		"js":       tcell.ColorTeal,
-		"html":     tcell.ColorTeal,
-		"css":      tcell.ColorTeal,
-		"json":     tcell.ColorTeal,
-		"xml":      tcell.ColorTeal,
-		"yaml":     tcell.ColorTeal,
-		"yml":      tcell.ColorTeal,
-		"toml":     tcell.ColorTeal,
-		"ini":      tcell.ColorTeal,
-		"conf":     tcell.ColorTeal,
-		"sh":       tcell.ColorGreen,
-		"bat":      tcell.ColorGreen,
-		"cmd":      tcell.ColorGreen,
-		"ps1":      tcell.ColorGreen,
-		"jpg":      tcell.ColorRed,
-		"jpeg":     tcell.ColorRed,
-		"png":      tcell.ColorRed,
-		"gif":      tcell.ColorRed,
-		"bmp":      tcell.ColorRed,
-		"svg":      tcell.ColorRed,
-		"mp3":      tcell.ColorPurple,
-		"wav":      tcell.ColorPurple,
-		"ogg":      tcell.ColorPurple,
-		"mp4":      tcell.ColorPurple,
-		"avi":      tcell.ColorPurple,
-		"mkv":      tcell.ColorPurple,
-		"pdf":      tcell.ColorRed,
-		"doc":      tcell.ColorTeal,
-		"docx":     tcell.ColorTeal,
-		"xls":      tcell.ColorGreen,
-		"xlsx":     tcell.ColorGreen,
-		"ppt":      tcell.ColorYellow,
-		"pptx":     tcell.ColorYellow,
-		"hidden":   tcell.ColorGray,
-		"default":  tcell.ColorBlack,
+		"dir":     tcell.ColorBlue,
+		"exe":     tcell.ColorGreen,
+		"zip":     tcell.ColorPurple,
+		"tar":     tcell.ColorPurple,
+		"gz":      tcell.ColorPurple,
+		"rar":     tcell.ColorPurple,
+		"7z":      tcell.ColorPurple,
+		"txt":     tcell.ColorBlack,
+		"md":      tcell.ColorBlack,
+		"go":      tcell.ColorTeal,
+		"c":       tcell.ColorTeal,
+		"cpp":     tcell.ColorTeal,
+		"h":       tcell.ColorTeal,
+		"py":      tcell.ColorTeal,
+		"js":      tcell.ColorTeal,
+		"html":    tcell.ColorTeal,
+		"css":     tcell.ColorTeal,
+		"json":    tcell.ColorTeal,
+		"xml":     tcell.ColorTeal,
+		"yaml":    tcell.ColorTeal,
+		"yml":     tcell.ColorTeal,
+		"toml":    tcell.ColorTeal,
+		"ini":     tcell.ColorTeal,
+		"conf":    tcell.ColorTeal,
+		"sh":      tcell.ColorGreen,
+		"bat":     tcell.ColorGreen,
+		"cmd":     tcell.ColorGreen,
+		"ps1":     tcell.ColorGreen,
+		"jpg":     tcell.ColorRed,
+		"jpeg":    tcell.ColorRed,
+		"png":     tcell.ColorRed,
+		"gif":     tcell.ColorRed,
+		"bmp":     tcell.ColorRed,
+		"svg":     tcell.ColorRed,
+		"mp3":     tcell.ColorPurple,
+		"wav":     tcell.ColorPurple,
+		"ogg":     tcell.ColorPurple,
+		"mp4":     tcell.ColorPurple,
+		"avi":     tcell.ColorPurple,
+		"mkv":     tcell.ColorPurple,
+		"pdf":     tcell.ColorRed,
+		"doc":     tcell.ColorTeal,
+		"docx":    tcell.ColorTeal,
+		"xls":     tcell.ColorGreen,
+		"xlsx":    tcell.ColorGreen,
+		"ppt":     tcell.ColorYellow,
+		"pptx":    tcell.ColorYellow,
+		"hidden":  tcell.ColorGray,
+		"default": tcell.ColorBlack,
 	}
 }
 
 // GetDarkColorScheme retorna um esquema de cores escuro para diferentes tipos de arquivos
 func GetDarkColorScheme() map[string]tcell.Color {
 	return map[string]tcell.Color{
-		"dir":      tcell.ColorLightBlue,
-		"exe":      tcell.ColorLightGreen,
-		"zip":      tcell.ColorPurple,
-		"tar":      tcell.ColorPurple,
-		"gz":       tcell.ColorPurple,
-		"rar":      tcell.ColorPurple,
-		"7z":       tcell.ColorPurple,
-		"txt":      tcell.ColorWhite,
-		"md":       tcell.ColorWhite,
-		"go":       tcell.ColorTeal,
-		"c":        tcell.ColorTeal,
-		"cpp":      tcell.ColorTeal,
-		"h":        tcell.ColorTeal,
-		"py":       tcell.ColorTeal,
-		"js":       tcell.ColorTeal,
-		"html":     tcell.ColorTeal,
-		"css":      tcell.ColorTeal,
-		"json":     tcell.ColorTeal,
-		"xml":      tcell.ColorTeal,
-		"yaml":     tcell.ColorTeal,
-		"yml":      tcell.ColorTeal,
-		"toml":     tcell.ColorTeal,
-		"ini":      tcell.ColorTeal,
-		"conf":     tcell.ColorTeal,
-		"sh":       tcell.ColorLightGreen,
-		"bat":      tcell.ColorLightGreen,
-		"cmd":      tcell.ColorLightGreen,
-		"ps1":      tcell.ColorLightGreen,
-		"jpg":      tcell.ColorRed,
-		"jpeg":     tcell.ColorRed,
-		"png":      tcell.ColorRed,
-		"gif":      tcell.ColorRed,
-		"bmp":      tcell.ColorRed,
-		"svg":      tcell.ColorRed,
-		"mp3":      tcell.ColorPurple,
-		"wav":      tcell.ColorPurple,
-		"ogg":      tcell.ColorPurple,
-		"mp4":      tcell.ColorPurple,
-		"avi":      tcell.ColorPurple,
-		"mkv":      tcell.ColorPurple,
-		"pdf":      tcell.ColorRed,
-		"doc":      tcell.ColorTeal,
-		"docx":     tcell.ColorTeal,
-		"xls":      tcell.ColorLightGreen,
-		"xlsx":     tcell.ColorLightGreen,
-		"ppt":      tcell.ColorYellow,
-		"pptx":     tcell.ColorYellow,
-		"hidden":   tcell.ColorGray,
-		"default":  tcell.ColorWhite,
+		"dir":     tcell.ColorLightBlue,
+		"exe":     tcell.ColorLightGreen,
+		"zip":     tcell.ColorPurple,
+		"tar":     tcell.ColorPurple,
+		"gz":      tcell.ColorPurple,
+		"rar":     tcell.ColorPurple,
+		"7z":      tcell.ColorPurple,
+		"txt":     tcell.ColorWhite,
+		"md":      tcell.ColorWhite,
+		"go":      tcell.ColorTeal,
+		"c":       tcell.ColorTeal,
+		"cpp":     tcell.ColorTeal,
+		"h":       tcell.ColorTeal,
+		"py":      tcell.ColorTeal,
+		"js":      tcell.ColorTeal,
+		"html":    tcell.ColorTeal,
+		"css":     tcell.ColorTeal,
+		"json":    tcell.ColorTeal,
+		"xml":     tcell.ColorTeal,
+		"yaml":    tcell.ColorTeal,
+		"yml":     tcell.ColorTeal,
+		"toml":    tcell.ColorTeal,
+		"ini":     tcell.ColorTeal,
+		"conf":    tcell.ColorTeal,
+		"sh":      tcell.ColorLightGreen,
+		"bat":     tcell.ColorLightGreen,
+		"cmd":     tcell.ColorLightGreen,
+		"ps1":     tcell.ColorLightGreen,
+		"jpg":     tcell.ColorRed,
+		"jpeg":    tcell.ColorRed,
+		"png":     tcell.ColorRed,
+		"gif":     tcell.ColorRed,
+		"bmp":     tcell.ColorRed,
+		"svg":     tcell.ColorRed,
+		"mp3":     tcell.ColorPurple,
+		"wav":     tcell.ColorPurple,
+		"ogg":     tcell.ColorPurple,
+		"mp4":     tcell.ColorPurple,
+		"avi":     tcell.ColorPurple,
+		"mkv":     tcell.ColorPurple,
+		"pdf":     tcell.ColorRed,
+		"doc":     tcell.ColorTeal,
+		"docx":    tcell.ColorTeal,
+		"xls":     tcell.ColorLightGreen,
+		"xlsx":    tcell.ColorLightGreen,
+		"ppt":     tcell.ColorYellow,
+		"pptx":    tcell.ColorYellow,
+		"hidden":  tcell.ColorGray,
+		"default": tcell.ColorWhite,
 	}
 }
 
 // GetLightColorScheme retorna um esquema de cores claro para diferentes tipos de arquivos
 func GetLightColorScheme() map[string]tcell.Color {
 	return map[string]tcell.Color{
-		"dir":      tcell.ColorBlue,
-		"exe":      tcell.ColorDarkGreen,
-		"zip":      tcell.ColorPurple,
-		"tar":      tcell.ColorPurple,
-		"gz":       tcell.ColorPurple,
-		"rar":      tcell.ColorPurple,
-		"7z":       tcell.ColorPurple,
-		"txt":      tcell.ColorBlack,
-		"md":       tcell.ColorBlack,
-		"go":       tcell.ColorTeal,
-		"c":        tcell.ColorTeal,
-		"cpp":      tcell.ColorTeal,
-		"h":        tcell.ColorTeal,
-		"py":       tcell.ColorTeal,
-		"js":       tcell.ColorTeal,
-		"html":     tcell.ColorTeal,
-		"css":      tcell.ColorTeal,
-		"json":     tcell.ColorTeal,
-		"xml":      tcell.ColorTeal,
-		"yaml":     tcell.ColorTeal,
-		"yml":      tcell.ColorTeal,
-		"toml":     tcell.ColorTeal,
-		"ini":      tcell.ColorTeal,
-		"conf":     tcell.ColorTeal,
-		"sh":       tcell.ColorDarkGreen,
-		"bat":      tcell.ColorDarkGreen,
-		"cmd":      tcell.ColorDarkGreen,
-		"ps1":      tcell.ColorDarkGreen,
-		"jpg":      tcell.ColorRed,
-		"jpeg":     tcell.ColorRed,
-		"png":      tcell.ColorRed,
-		"gif":      tcell.ColorRed,
-		"bmp":      tcell.ColorRed,
-		"svg":      tcell.ColorRed,
-		"mp3":      tcell.ColorPurple,
-		"wav":      tcell.ColorPurple,
-		"ogg":      tcell.ColorPurple,
-		"mp4":      tcell.ColorPurple,
-		"avi":      tcell.ColorPurple,
-		"mkv":      tcell.ColorPurple,
-		"pdf":      tcell.ColorRed,
-		"doc":      tcell.ColorTeal,
-		"docx":     tcell.ColorTeal,
-		"xls":      tcell.ColorDarkGreen,
-		"xlsx":     tcell.ColorDarkGreen,
-		"ppt":      tcell.ColorYellow,
-		"pptx":     tcell.ColorYellow,
-		"hidden":   tcell.ColorGray,
-		"default":  tcell.ColorBlack,
+		"dir":     tcell.ColorBlue,
+		"exe":     tcell.ColorDarkGreen,
+		"zip":     tcell.ColorPurple,
+		"tar":     tcell.ColorPurple,
+		"gz":      tcell.ColorPurple,
+		"rar":     tcell.ColorPurple,
+		"7z":      tcell.ColorPurple,
+		"txt":     tcell.ColorBlack,
+		"md":      tcell.ColorBlack,
+		"go":      tcell.ColorTeal,
+		"c":       tcell.ColorTeal,
+		"cpp":     tcell.ColorTeal,
+		"h":       tcell.ColorTeal,
+		"py":      tcell.ColorTeal,
+		"js":      tcell.ColorTeal,
+		"html":    tcell.ColorTeal,
+		"css":     tcell.ColorTeal,
+		"json":    tcell.ColorTeal,
+		"xml":     tcell.ColorTeal,
+		"yaml":    tcell.ColorTeal,
+		"yml":     tcell.ColorTeal,
+		"toml":    tcell.ColorTeal,
+		"ini":     tcell.ColorTeal,
+		"conf":    tcell.ColorTeal,
+		"sh":      tcell.ColorDarkGreen,
+		"bat":     tcell.ColorDarkGreen,
+		"cmd":     tcell.ColorDarkGreen,
+		"ps1":     tcell.ColorDarkGreen,
+		"jpg":     tcell.ColorRed,
+		"jpeg":    tcell.ColorRed,
+		"png":     tcell.ColorRed,
+		"gif":     tcell.ColorRed,
+		"bmp":     tcell.ColorRed,
+		"svg":     tcell.ColorRed,
+		"mp3":     tcell.ColorPurple,
+		"wav":     tcell.ColorPurple,
+		"ogg":     tcell.ColorPurple,
+		"mp4":     tcell.ColorPurple,
+		"avi":     tcell.ColorPurple,
+		"mkv":     tcell.ColorPurple,
+		"pdf":     tcell.ColorRed,
+		"doc":     tcell.ColorTeal,
+		"docx":    tcell.ColorTeal,
+		"xls":     tcell.ColorDarkGreen,
+		"xlsx":    tcell.ColorDarkGreen,
+		"ppt":     tcell.ColorYellow,
+		"pptx":    tcell.ColorYellow,
+		"hidden":  tcell.ColorGray,
+		"default": tcell.ColorBlack,
 	}
 }
 
@@ -534,11 +535,11 @@ func GetFileColor(filename string, isDir bool, isHidden bool) tcell.Color {
 	if isHidden {
 		return GetRetroColorScheme()["hidden"]
 	}
-	
+
 	if isDir {
 		return GetRetroColorScheme()["dir"]
 	}
-	
+
 	// Obter extensão
 	ext := ""
 	for i := len(filename) - 1; i >= 0; i-- {
@@ -547,11 +548,11 @@ func GetFileColor(filename string, isDir bool, isHidden bool) tcell.Color {
 			break
 		}
 	}
-	
+
 	// Verificar se a extensão existe no esquema de cores
 	if color, ok := GetRetroColorScheme()[ext]; ok {
 		return color
 	}
-	
+
 	return GetRetroColorScheme()["default"]
 }

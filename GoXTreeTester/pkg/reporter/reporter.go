@@ -10,12 +10,15 @@ import (
 
 // Reporter é responsável por gerar relatórios
 type Reporter struct {
-	reportPath string
-	verbose    bool
-	startTime  time.Time
-	issues     []Issue
-	testResults []TestResult
-	fixes      []Fix
+	reportPath      string
+	verbose         bool
+	startTime       time.Time
+	issues          []Issue
+	testResults     []TestResult
+	fixes           []Fix
+	warnings        []string
+	includeWarnings bool
+	includeFixes    bool
 }
 
 // Issue representa um problema encontrado
@@ -43,10 +46,22 @@ type Fix struct {
 // NewReporter cria um novo gerador de relatórios
 func NewReporter(reportPath string, verbose bool) *Reporter {
 	return &Reporter{
-		reportPath: reportPath,
-		verbose:    verbose,
-		startTime:  time.Now(),
+		reportPath:      reportPath,
+		verbose:         verbose,
+		startTime:       time.Now(),
+		includeWarnings: true,
+		includeFixes:    true,
 	}
+}
+
+// SetIncludeWarnings define se os avisos devem ser incluídos no relatório
+func (r *Reporter) SetIncludeWarnings(include bool) {
+	r.includeWarnings = include
+}
+
+// SetIncludeFixes define se as correções devem ser incluídas no relatório
+func (r *Reporter) SetIncludeFixes(include bool) {
+	r.includeFixes = include
 }
 
 // AddIssue adiciona um problema ao relatório
@@ -89,6 +104,15 @@ func (r *Reporter) AddFix(file, message string) {
 
 	if r.verbose {
 		fmt.Printf("[FIX] %s: %s\n", file, message)
+	}
+}
+
+// AddWarning adiciona um aviso ao relatório
+func (r *Reporter) AddWarning(message string) {
+	r.warnings = append(r.warnings, message)
+
+	if r.verbose {
+		fmt.Printf("[WARN] %s\n", message)
 	}
 }
 
@@ -271,6 +295,10 @@ func (r *Reporter) generateHTMLReport() string {
                 <div class="error">Testes Falharam</div>
             </div>
             <div class="summary-item">
+                <div class="count">` + fmt.Sprintf("%d", len(r.warnings)) + `</div>
+                <div class="warning">Avisos</div>
+            </div>
+            <div class="summary-item">
                 <div class="count">` + formatDuration(duration) + `</div>
                 <div>Tempo Total</div>
             </div>
@@ -366,34 +394,57 @@ func (r *Reporter) generateHTMLReport() string {
         <p>Nenhum teste executado!</p>`)
 	}
 
-	html.WriteString(`
+	if r.includeWarnings {
+		html.WriteString(`
+        <h2>Avisos</h2>`)
+
+		if len(r.warnings) > 0 {
+			html.WriteString(`
+            <ul>`)
+
+			for _, warning := range r.warnings {
+				html.WriteString(fmt.Sprintf(`
+                    <li>%s</li>`, warning))
+			}
+
+			html.WriteString(`
+            </ul>`)
+		} else {
+			html.WriteString(`
+            <p>Nenhum aviso!</p>`)
+		}
+	}
+
+	if r.includeFixes {
+		html.WriteString(`
         <h2>Correções Aplicadas</h2>`)
 
-	if len(r.fixes) > 0 {
-		html.WriteString(`
-        <table>
-            <thead>
-                <tr>
-                    <th>Arquivo</th>
-                    <th>Descrição</th>
-                </tr>
-            </thead>
-            <tbody>`)
+		if len(r.fixes) > 0 {
+			html.WriteString(`
+            <table>
+                <thead>
+                    <tr>
+                        <th>Arquivo</th>
+                        <th>Descrição</th>
+                    </tr>
+                </thead>
+                <tbody>`)
 
-		for _, fix := range r.fixes {
-			html.WriteString(fmt.Sprintf(`
-                <tr>
-                    <td>%s</td>
-                    <td>%s</td>
-                </tr>`, fix.File, fix.Message))
+			for _, fix := range r.fixes {
+				html.WriteString(fmt.Sprintf(`
+                    <tr>
+                        <td>%s</td>
+                        <td>%s</td>
+                    </tr>`, fix.File, fix.Message))
+			}
+
+			html.WriteString(`
+                </tbody>
+            </table>`)
+		} else {
+			html.WriteString(`
+            <p>Nenhuma correção aplicada!</p>`)
 		}
-
-		html.WriteString(`
-            </tbody>
-        </table>`)
-	} else {
-		html.WriteString(`
-        <p>Nenhuma correção aplicada!</p>`)
 	}
 
 	html.WriteString(`

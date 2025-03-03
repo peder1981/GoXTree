@@ -1,8 +1,9 @@
 package ui
 
 import (
-	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+
+	"github.com/gdamore/tcell/v2"
 )
 
 // HelpView representa a visualização de ajuda

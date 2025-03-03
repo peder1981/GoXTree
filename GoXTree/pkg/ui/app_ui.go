@@ -2,11 +2,12 @@ package ui
 
 import (
 	"fmt"
-	"strings"
 	"path/filepath"
+	"strings"
+
+	"github.com/rivo/tview"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/rivo/tview"
 )
 
 // showInputDialog exibe um diálogo de entrada de texto
@@ -16,20 +17,20 @@ func (a *App) showInputDialog(title, defaultText string, callback func(string)) 
 	form.SetTitle(title).
 		SetTitleAlign(tview.AlignCenter).
 		SetBorder(true)
-	
+
 	// Adicionar campo de entrada
 	form.AddInputField("", defaultText, 40, nil, nil)
-	
+
 	// Adicionar botões
 	form.AddButton("OK", func() {
 		a.pages.RemovePage("inputDialog")
 		callback(form.GetFormItem(0).(*tview.InputField).GetText())
 	})
-	
+
 	form.AddButton("Cancelar", func() {
 		a.pages.RemovePage("inputDialog")
 	})
-	
+
 	// Configurar manipulador de eventos
 	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape {
@@ -42,7 +43,7 @@ func (a *App) showInputDialog(title, defaultText string, callback func(string)) 
 		}
 		return event
 	})
-	
+
 	// Adicionar página
 	a.pages.AddPage("inputDialog", form, true, true)
 	a.app.SetFocus(form)
@@ -64,7 +65,7 @@ func (a *App) showInputDialogWithValue(title, initialValue string, callback func
 	form.SetCancelFunc(func() {
 		a.pages.RemovePage("input")
 	})
-	
+
 	// Adicionar página
 	a.pages.AddPage("input", form, true, true)
 	a.app.SetFocus(form)
@@ -76,7 +77,7 @@ func (a *App) showGoToDialog() {
 		if path == "" {
 			return
 		}
-		
+
 		// Expandir caminho
 		if strings.HasPrefix(path, "~") {
 			homeDir, err := a.getHomeDir()
@@ -86,7 +87,7 @@ func (a *App) showGoToDialog() {
 			}
 			path = filepath.Join(homeDir, path[1:])
 		}
-		
+
 		// Navegar para o diretório
 		a.NavigateToDirectory(path)
 	})

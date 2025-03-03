@@ -6,9 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gdamore/tcell/v2"
 	"github.com/peder1981/GoXTree/pkg/viewer"
 	"github.com/rivo/tview"
+
+	"github.com/gdamore/tcell/v2"
 )
 
 // FileViewer representa o componente de visualização de arquivos

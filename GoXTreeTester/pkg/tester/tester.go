@@ -12,6 +12,16 @@ import (
 	"github.com/peder1981/GoXTreeTester/pkg/reporter"
 )
 
+// Configurações globais para o testador
+var (
+	testTimeout = "30s"
+)
+
+// SetTestTimeout define o tempo limite para execução de testes
+func SetTestTimeout(timeout string) {
+	testTimeout = timeout
+}
+
 // TestResult representa o resultado de um teste
 type TestResult struct {
 	Name         string
@@ -24,6 +34,7 @@ type TestResult struct {
 type Tester struct {
 	projectPath string
 	reporter    *reporter.Reporter
+	timeout     string
 }
 
 // NewTester cria um novo testador
@@ -31,7 +42,13 @@ func NewTester(projectPath string, reporter *reporter.Reporter) *Tester {
 	return &Tester{
 		projectPath: projectPath,
 		reporter:    reporter,
+		timeout:     testTimeout,
 	}
+}
+
+// SetTimeout define o tempo limite para execução de testes para este testador
+func (t *Tester) SetTimeout(timeout string) {
+	t.timeout = timeout
 }
 
 // RunTests executa os testes do projeto
@@ -93,8 +110,8 @@ func (t *Tester) runGoTests() ([]TestResult, error) {
 		}
 	}
 
-	// Executar testes Go
-	cmd := exec.Command("go", "test", "./...", "-v")
+	// Executar testes Go com timeout configurado
+	cmd := exec.Command("go", "test", "./...", "-v", "-timeout", t.timeout)
 	cmd.Dir = t.projectPath
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout

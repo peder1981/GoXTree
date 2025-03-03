@@ -65,11 +65,11 @@ func (s *StatusBar) Update(currentDir string, numFiles, numDirs int, dirSize int
 func (s *StatusBar) UpdateStatus(currentDir string) {
 	// Obter informações do diretório
 	numFiles, numDirs, dirSize := utils.GetDirectoryStats(currentDir)
-	
+
 	// Definir um texto informativo
 	infoText := fmt.Sprintf("[yellow]Diretório:[white] %s | [yellow]Arquivos:[white] %d | [yellow]Diretórios:[white] %d | [yellow]Tamanho:[white] %s",
 		currentDir, numFiles, numDirs, formatSize(dirSize))
-	
+
 	// Atualizar texto
 	s.statusBar.Clear()
 	fmt.Fprintf(s.statusBar, "%s", infoText)

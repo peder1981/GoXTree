@@ -5,6 +5,7 @@ GoXTreeTester é uma ferramenta de análise e teste automático para o projeto G
 ## Funcionalidades
 
 - **Análise Estática de Código**: Identifica problemas como funções duplicadas, imports não utilizados, métodos não definidos e inconsistências de nomenclatura.
+- **Verificação de Estilo de Código**: Analisa o estilo do código, identificando problemas como linhas muito longas, espaços em branco no final das linhas e falta de documentação.
 - **Execução de Testes**: Executa testes unitários e funcionais automaticamente.
 - **Correção Automática**: Corrige problemas identificados automaticamente quando possível.
 - **Geração de Relatórios**: Gera relatórios detalhados em formato HTML com os resultados da análise e dos testes.
@@ -42,6 +43,15 @@ go build -o gxtester ./cmd/gxtester
 # Executar apenas testes
 ./gxtester --project=/caminho/para/GoXTree --test-only
 
+# Corrigir apenas imports não utilizados
+./gxtester --project=/caminho/para/GoXTree --fix-imports
+
+# Verificar apenas o estilo de código
+./gxtester --project=/caminho/para/GoXTree --check-style
+
+# Verificar estilo de código e corrigir problemas automaticamente
+./gxtester --project=/caminho/para/GoXTree --check-style --autofix
+
 # Exibir informações detalhadas
 ./gxtester --project=/caminho/para/GoXTree --verbose
 
@@ -55,7 +65,7 @@ go build -o gxtester ./cmd/gxtester
 ## Estrutura do Projeto
 
 - **cmd/gxtester**: Ponto de entrada da aplicação
-- **pkg/analyzer**: Módulo de análise estática de código
+- **pkg/analyzer**: Módulo de análise estática de código e verificação de estilo
 - **pkg/tester**: Módulo de execução de testes
 - **pkg/fixer**: Módulo de correção automática
 - **pkg/reporter**: Módulo de geração de relatórios
@@ -64,11 +74,13 @@ go build -o gxtester ./cmd/gxtester
 
 1. **Análise**: O módulo de análise percorre o código-fonte do GoXTree e identifica problemas como funções duplicadas, imports não utilizados, métodos não definidos e inconsistências de nomenclatura.
 
-2. **Testes**: O módulo de testes executa testes unitários e funcionais para verificar se o código está funcionando corretamente.
+2. **Verificação de Estilo**: O verificador de estilo analisa o código em busca de problemas de estilo, como linhas muito longas, espaços em branco no final das linhas e falta de documentação em tipos e funções exportados.
 
-3. **Correção**: O módulo de correção aplica correções automáticas para os problemas identificados, quando possível.
+3. **Testes**: O módulo de testes executa testes unitários e funcionais para verificar se o código está funcionando corretamente.
 
-4. **Relatório**: O módulo de relatório gera um relatório detalhado em formato HTML com os resultados da análise e dos testes.
+4. **Correção**: O módulo de correção aplica correções automáticas para os problemas identificados, quando possível.
+
+5. **Relatório**: O módulo de relatório gera um relatório detalhado em formato HTML com os resultados da análise e dos testes.
 
 ## Exemplos de Problemas Detectados
 
@@ -76,6 +88,10 @@ go build -o gxtester ./cmd/gxtester
 - Imports não utilizados
 - Chamadas para métodos não definidos
 - Inconsistências de nomenclatura
+- Linhas muito longas
+- Espaços em branco no final das linhas
+- Tipos e funções exportados sem documentação
+- Comentários mal formatados
 
 ## Exemplos de Correções Automáticas
 
@@ -83,6 +99,8 @@ go build -o gxtester ./cmd/gxtester
 - Remoção de imports não utilizados
 - Correção de nomes de funções
 - Substituição de chamadas para métodos não definidos por métodos similares
+- Remoção de espaços em branco no final das linhas
+- Formatação de comentários
 
 ## Licença
 
