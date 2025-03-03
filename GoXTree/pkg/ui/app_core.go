@@ -53,12 +53,13 @@ const (
 func NewApp() *App {
 	// Criar aplicação
 	app := &App{
-		app:        tview.NewApplication(),
-		pages:      tview.NewPages(),
-		mainLayout: tview.NewFlex(),
-		history:    make([]string, 0),
-		historyPos: -1,
-		showHidden: false,
+		app:           tview.NewApplication(),
+		pages:         tview.NewPages(),
+		mainLayout:    tview.NewFlex(),
+		history:       make([]string, 0),
+		historyPos:    -1,
+		showHidden:    false,
+		selectedFiles: make(map[string]bool),
 	}
 
 	// Obter diretório atual
@@ -74,8 +75,22 @@ func NewApp() *App {
 	app.statusBar = NewStatusBar()
 	app.menuBar = NewMenuBar(app)
 
-	// Aplicar tema retrô
-	ApplyRetroThemeToApp(app)
+	// Carregar configuração
+	config, err := LoadConfig()
+	if err != nil {
+		// Se houver erro, usar tema retrô padrão
+		ApplyRetroThemeToApp(app)
+		app.showError(fmt.Sprintf("Erro ao carregar configuração: %s. Usando tema padrão.", err))
+	} else {
+		// Aplicar tema da configuração
+		if err := ApplyTheme(app, config.Theme); err != nil {
+			// Se houver erro no tema, usar tema retrô padrão
+			ApplyRetroThemeToApp(app)
+			app.showError(fmt.Sprintf("Erro ao aplicar tema: %s. Usando tema padrão.", err))
+		}
+		// Aplicar outras configurações
+		app.showHidden = config.ShowHidden
+	}
 
 	// Configurar layout principal como vertical (Row)
 	app.mainLayout.SetDirection(tview.FlexRow)
@@ -199,67 +214,79 @@ func (a *App) SetupKeyHandlers() {
 			} else if a.pages.HasPage("rename") {
 				a.pages.RemovePage("rename")
 				return nil
-			} else if a.pages.HasPage("delete") {
-				a.pages.RemovePage("delete")
-				return nil
-			} else if a.pages.HasPage("sync") {
-				a.pages.RemovePage("sync")
-				return nil
-			} else if a.pages.HasPage("view") {
-				a.pages.RemovePage("view")
-				return nil
-			} else if a.pages.HasPage("edit") {
-				a.pages.RemovePage("edit")
-				return nil
-			} else if a.pages.HasPage("compare") {
-				a.pages.RemovePage("compare")
-				return nil
-			} else if a.pages.HasPage("sysinfo") {
-				a.pages.RemovePage("sysinfo")
+			} else if a.pages.HasPage("themeSelector") {
+				a.pages.RemovePage("themeSelector")
 				return nil
 			}
 		}
 
 		// Verificar combinações de teclas Ctrl+letra
-		if event.Modifiers() == tcell.ModCtrl {
+		if event.Modifiers()&tcell.ModCtrl != 0 {
 			switch event.Rune() {
 			case 'a', 'A': // Ctrl+A: Selecionar todos os arquivos
-				a.selectAllFiles()
+				a.selectAll()
 				return nil
 			case 'd', 'D': // Ctrl+D: Desmarcar todos os arquivos
-				a.unselectAllFiles()
+				a.deselectAll()
 				return nil
-			case 'f', 'F': // Ctrl+F: Buscar arquivo
+			case 'h', 'H': // Ctrl+H: Alternar exibição de arquivos ocultos
+				a.toggleHiddenFiles()
+				return nil
+			case 'q', 'Q': // Ctrl+Q: Sair
+				a.confirmExit()
+				return nil
+			case 'c', 'C': // Ctrl+C: Copiar
+				a.copySelectedFiles()
+				return nil
+			case 'x', 'X': // Ctrl+X: Recortar
+				a.cutSelectedFiles()
+				return nil
+			case 'v', 'V': // Ctrl+V: Colar
+				a.pasteFiles()
+				return nil
+			case 'f', 'F': // Ctrl+F: Buscar
 				a.searchFiles()
 				return nil
 			case 'g', 'G': // Ctrl+G: Ir para diretório
 				a.goToDirectory()
 				return nil
-			case 'h', 'H': // Ctrl+H: Alternar arquivos ocultos
-				a.toggleHiddenFiles()
+			case 'r', 'R': // Ctrl+R: Atualizar
+				a.refreshAll()
 				return nil
-			case 'r', 'R': // Ctrl+R: Atualizar visualização
-				a.refreshView()
-				return nil
-			case 's', 'S': // Ctrl+S: Selecionar/desmarcar arquivo atual
-				a.toggleSelection()
-				return nil
-			case 'c', 'C': // Ctrl+C: Comparar arquivos selecionados
-				a.compareSelectedFiles()
-				return nil
-			case 'v', 'V': // Ctrl+V: Visualizar arquivo
-				a.viewCurrentFile()
-				return nil
-			case 'e', 'E': // Ctrl+E: Editar arquivo
-				a.editCurrentFile()
-				return nil
-			case 'y', 'Y': // Ctrl+Y: Sincronizar diretórios
-				a.syncDirectories()
-				return nil
-			case 'i', 'I': // Ctrl+I: Informações do sistema
-				a.showSystemInfo()
+			case 't', 'T': // Ctrl+T: Alternar tema
+				a.showThemeSelector()
 				return nil
 			}
+		}
+
+		// Verificar combinações de teclas Alt+letra
+		if event.Modifiers()&tcell.ModAlt != 0 {
+			switch event.Rune() {
+			case 's', 'S': // Alt+S: Ordenar
+				a.toggleSortOrder()
+				return nil
+			case 'v', 'V': // Alt+V: Visualizar
+				a.viewFile()
+				return nil
+			case 'e', 'E': // Alt+E: Editar
+				a.editFile()
+				return nil
+			case 'i', 'I': // Alt+I: Informações
+				a.showFileInfo()
+				return nil
+			case 'c', 'C': // Alt+C: Comparar arquivos selecionados
+				a.compareSelectedFiles()
+				return nil
+			}
+		}
+
+		// Passar o evento para o manipulador específico do componente com foco
+		focusedPrimitive := a.app.GetFocus()
+		switch focusedPrimitive {
+		case a.fileView.fileList:
+			return a.handleFileViewKeys(event)
+		case a.treeView.TreeView:
+			return a.handleTreeViewKeys(event)
 		}
 
 		return event
@@ -549,6 +576,10 @@ func (a *App) handleFileViewKeys(event *tcell.EventKey) *tcell.EventKey {
 		// Alternar foco para a árvore
 		a.app.SetFocus(a.treeView.TreeView)
 		return nil
+	case tcell.KeySpace:
+		// Selecionar arquivo atual e mover para o próximo
+		a.toggleSelectionWithSpace()
+		return nil
 	}
 
 	// Verificar teclas de letra
@@ -560,6 +591,10 @@ func (a *App) handleFileViewKeys(event *tcell.EventKey) *tcell.EventKey {
 	case 'r':
 		// Atualizar visualização
 		a.refreshView()
+		return nil
+	case ' ':
+		// Selecionar arquivo atual e mover para o próximo (para teclados que não enviam KeySpace)
+		a.toggleSelectionWithSpace()
 		return nil
 	}
 
@@ -727,4 +762,177 @@ func (a *App) addToHistory(dir string) {
 		a.history = append(a.history, dir)
 		a.historyPos = len(a.history) - 1
 	}
+}
+
+// showThemeSelector exibe o seletor de temas
+func (a *App) showThemeSelector() {
+	// Criar lista de temas
+	list := tview.NewList().
+		AddItem("Retrô", "Tema clássico estilo DOS", 'r', func() {
+			a.changeTheme("retro")
+		}).
+		AddItem("Moderno", "Tema moderno com ícones Unicode", 'm', func() {
+			a.changeTheme("modern")
+		}).
+		AddItem("Escuro", "Tema escuro para ambientes com pouca luz", 'e', func() {
+			a.changeTheme("dark")
+		}).
+		AddItem("Claro", "Tema claro para ambientes bem iluminados", 'c', func() {
+			a.changeTheme("light")
+		}).
+		AddItem("Cancelar", "Voltar sem alterar o tema", 'x', func() {
+			a.pages.RemovePage("themeSelector")
+		})
+
+	// Configurar lista
+	list.SetBorder(true).
+		SetTitle(" Selecionar Tema ").
+		SetTitleAlign(tview.AlignCenter).
+		SetBorderPadding(1, 1, 1, 1)
+
+	// Criar modal
+	modal := tview.NewFlex().
+		AddItem(nil, 0, 1, false).
+		AddItem(tview.NewFlex().
+			SetDirection(tview.FlexRow).
+			AddItem(nil, 0, 1, false).
+			AddItem(list, 10, 1, true).
+			AddItem(nil, 0, 1, false), 40, 1, true).
+		AddItem(nil, 0, 1, false)
+
+	// Adicionar à página
+	a.pages.AddPage("themeSelector", modal, true, true)
+	a.app.SetFocus(list)
+}
+
+// changeTheme altera o tema da aplicação
+func (a *App) changeTheme(themeName string) {
+	// Aplicar tema
+	if err := ApplyTheme(a, themeName); err != nil {
+		a.showError(fmt.Sprintf("Erro ao aplicar tema: %s", err))
+		return
+	}
+
+	// Atualizar configuração
+	config, err := LoadConfig()
+	if err != nil {
+		a.showError(fmt.Sprintf("Erro ao carregar configuração: %s", err))
+	} else {
+		config.Theme = themeName
+		if err := SaveConfig(config); err != nil {
+			a.showError(fmt.Sprintf("Erro ao salvar configuração: %s", err))
+		}
+	}
+
+	// Atualizar visualizações
+	a.refreshAll()
+	a.pages.RemovePage("themeSelector")
+	a.showMessage(fmt.Sprintf("Tema '%s' aplicado com sucesso", themeName))
+}
+
+// toggleSortOrder alterna a ordem de classificação dos arquivos
+func (a *App) toggleSortOrder() {
+	// Implementar alternância de ordem de classificação
+	a.showMessage("Alternando ordem de classificação (não implementado)")
+}
+
+// showFileInfo exibe informações detalhadas sobre o arquivo selecionado
+func (a *App) showFileInfo() {
+	// Implementar exibição de informações do arquivo
+	a.showMessage("Exibindo informações do arquivo (não implementado)")
+}
+
+// editFile abre o arquivo selecionado para edição
+func (a *App) editFile() {
+	// Implementar edição de arquivo
+	a.showMessage("Editando arquivo (não implementado)")
+}
+
+// compareSelectedFiles compara os arquivos selecionados
+func (a *App) compareSelectedFiles() {
+	// Verificar se há exatamente dois arquivos selecionados
+	if len(a.selectedFiles) != 2 {
+		a.showError("Selecione exatamente dois arquivos para comparar")
+		return
+	}
+
+	// Obter os nomes dos arquivos selecionados
+	var files []string
+	for file := range a.selectedFiles {
+		files = append(files, file)
+	}
+
+	// Verificar se ambos são arquivos (não diretórios)
+	file1Info, err := os.Stat(files[0])
+	if err != nil {
+		a.showError(fmt.Sprintf("Erro ao acessar arquivo: %s", err))
+		return
+	}
+	file2Info, err := os.Stat(files[1])
+	if err != nil {
+		a.showError(fmt.Sprintf("Erro ao acessar arquivo: %s", err))
+		return
+	}
+	if file1Info.IsDir() || file2Info.IsDir() {
+		a.showError("Não é possível comparar diretórios")
+		return
+	}
+
+	// Implementar comparação de arquivos
+	a.compareFiles(files[0], files[1])
+}
+
+// compareFiles compara dois arquivos e exibe as diferenças
+func (a *App) compareFiles(file1, file2 string) {
+	// Ler conteúdo dos arquivos
+	content1, err := os.ReadFile(file1)
+	if err != nil {
+		a.showError(fmt.Sprintf("Erro ao ler arquivo %s: %s", file1, err))
+		return
+	}
+	content2, err := os.ReadFile(file2)
+	if err != nil {
+		a.showError(fmt.Sprintf("Erro ao ler arquivo %s: %s", file2, err))
+		return
+	}
+
+	// Criar diff
+	dmp := diffmatchpatch.New()
+	diffs := dmp.DiffMain(string(content1), string(content2), false)
+	diffText := dmp.DiffPrettyText(diffs)
+
+	// Criar visualizador de texto
+	textView := tview.NewTextView().
+		SetDynamicColors(true).
+		SetRegions(true).
+		SetScrollable(true).
+		SetText(diffText)
+
+	// Configurar visualizador
+	textView.SetBorder(true).
+		SetTitle(fmt.Sprintf(" Comparando: %s <-> %s ", filepath.Base(file1), filepath.Base(file2))).
+		SetTitleAlign(tview.AlignCenter)
+
+	// Criar modal
+	modal := tview.NewFlex().
+		AddItem(nil, 0, 1, false).
+		AddItem(tview.NewFlex().
+			SetDirection(tview.FlexRow).
+			AddItem(nil, 0, 1, false).
+			AddItem(textView, 0, 1, true).
+			AddItem(nil, 0, 1, false), 0, 1, true).
+		AddItem(nil, 0, 1, false)
+
+	// Adicionar à página
+	a.pages.AddPage("compare", modal, true, true)
+	a.app.SetFocus(textView)
+
+	// Adicionar manipulador de teclas para fechar
+	textView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape || event.Key() == tcell.KeyEnter {
+			a.pages.RemovePage("compare")
+			return nil
+		}
+		return event
+	})
 }

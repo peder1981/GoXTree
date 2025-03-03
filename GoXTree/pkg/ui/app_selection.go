@@ -13,10 +13,12 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
-// selectAllFiles seleciona todos os arquivos no diretório atual
-func (a *App) selectAllFiles() {
-	// Limpar seleção atual
-	a.fileView.selectedFiles = make([]string, 0)
+// selectAll seleciona todos os arquivos no diretório atual
+func (a *App) selectAll() {
+	// Inicializar mapa de seleção se não existir
+	if a.selectedFiles == nil {
+		a.selectedFiles = make(map[string]bool)
+	}
 	
 	// Obter lista de arquivos no diretório atual
 	files, err := os.ReadDir(a.currentDir)
@@ -28,7 +30,8 @@ func (a *App) selectAllFiles() {
 	// Adicionar todos os arquivos à seleção
 	for _, file := range files {
 		if !file.IsDir() {
-			a.fileView.selectedFiles = append(a.fileView.selectedFiles, file.Name())
+			filePath := filepath.Join(a.currentDir, file.Name())
+			a.selectedFiles[filePath] = true
 		}
 	}
 	
@@ -36,13 +39,13 @@ func (a *App) selectAllFiles() {
 	a.updateFileList()
 	
 	// Atualizar barra de status
-	a.statusBar.SetStatus(fmt.Sprintf("%d arquivos selecionados", len(a.fileView.selectedFiles)))
+	a.statusBar.SetStatus(fmt.Sprintf("%d arquivos selecionados", len(a.selectedFiles)))
 }
 
-// unselectAllFiles remove a seleção de todos os arquivos
-func (a *App) unselectAllFiles() {
+// deselectAll remove a seleção de todos os arquivos
+func (a *App) deselectAll() {
 	// Limpar seleção atual
-	a.fileView.selectedFiles = make([]string, 0)
+	a.selectedFiles = make(map[string]bool)
 	
 	// Atualizar visualização
 	a.updateFileList()
@@ -61,29 +64,61 @@ func (a *App) toggleSelection() {
 	
 	// Obter nome do arquivo
 	fileName := a.fileView.fileList.GetCell(row, 0).Text
+	filePath := filepath.Join(a.currentDir, fileName)
 	
 	// Verificar se o arquivo já está selecionado
-	isSelected := false
-	for i, selected := range a.fileView.selectedFiles {
-		if selected == fileName {
-			// Remover da seleção
-			a.fileView.selectedFiles = append(a.fileView.selectedFiles[:i], a.fileView.selectedFiles[i+1:]...)
-			isSelected = true
-			break
-		}
-	}
-	
-	// Se não estava selecionado, adicionar à seleção
-	if !isSelected {
-		a.fileView.selectedFiles = append(a.fileView.selectedFiles, fileName)
+	if _, ok := a.selectedFiles[filePath]; ok {
+		// Remover da seleção
+		delete(a.selectedFiles, filePath)
+	} else {
+		// Adicionar à seleção
+		a.selectedFiles[filePath] = true
 	}
 	
 	// Atualizar visualização
 	a.updateFileList()
 	
 	// Atualizar barra de status
-	if len(a.fileView.selectedFiles) > 0 {
-		a.statusBar.SetStatus(fmt.Sprintf("%d arquivos selecionados", len(a.fileView.selectedFiles)))
+	if len(a.selectedFiles) > 0 {
+		a.statusBar.SetStatus(fmt.Sprintf("%d arquivos selecionados", len(a.selectedFiles)))
+	} else {
+		a.statusBar.SetStatus("Nenhum arquivo selecionado")
+	}
+}
+
+// toggleSelectionWithSpace alterna a seleção do arquivo atual e move para o próximo
+func (a *App) toggleSelectionWithSpace() {
+	// Obter arquivo selecionado
+	row, _ := a.fileView.fileList.GetSelection()
+	if row <= 1 { // Cabeçalho ou diretório pai
+		return
+	}
+	
+	// Obter nome do arquivo
+	fileName := a.fileView.fileList.GetCell(row, 0).Text
+	filePath := filepath.Join(a.currentDir, fileName)
+	
+	// Verificar se o arquivo já está selecionado
+	if _, ok := a.selectedFiles[filePath]; ok {
+		// Remover da seleção
+		delete(a.selectedFiles, filePath)
+	} else {
+		// Adicionar à seleção
+		a.selectedFiles[filePath] = true
+	}
+	
+	// Atualizar visualização
+	a.updateFileList()
+	
+	// Mover para o próximo item
+	rowCount := a.fileView.fileList.GetRowCount()
+	if row < rowCount-1 {
+		a.fileView.fileList.Select(row+1, 0)
+	}
+	
+	// Atualizar barra de status
+	if len(a.selectedFiles) > 0 {
+		a.statusBar.SetStatus(fmt.Sprintf("%d arquivos selecionados", len(a.selectedFiles)))
 	} else {
 		a.statusBar.SetStatus("Nenhum arquivo selecionado")
 	}
@@ -244,14 +279,23 @@ func (a *App) editCurrentFile() {
 // compareSelectedFiles compara dois arquivos selecionados
 func (a *App) compareSelectedFiles() {
 	// Verificar se há exatamente dois arquivos selecionados
-	if len(a.fileView.selectedFiles) != 2 {
+	if len(a.selectedFiles) != 2 {
 		a.showMessage("Selecione exatamente dois arquivos para comparar")
 		return
 	}
 	
 	// Obter caminhos dos arquivos
-	file1Path := filepath.Join(a.currentDir, a.fileView.selectedFiles[0])
-	file2Path := filepath.Join(a.currentDir, a.fileView.selectedFiles[1])
+	file1Path := ""
+	file2Path := ""
+	i := 0
+	for filePath := range a.selectedFiles {
+		if i == 0 {
+			file1Path = filePath
+		} else if i == 1 {
+			file2Path = filePath
+		}
+		i++
+	}
 	
 	// Verificar se são diretórios
 	file1Info, err := os.Stat(file1Path)
@@ -293,7 +337,7 @@ func (a *App) compareSelectedFiles() {
 		SetDynamicColors(true).
 		SetRegions(true).
 		SetScrollable(true).
-		SetTitle(fmt.Sprintf(" Comparando: %s e %s ", a.fileView.selectedFiles[0], a.fileView.selectedFiles[1])).
+		SetTitle(fmt.Sprintf(" Comparando: %s e %s ", filepath.Base(file1Path), filepath.Base(file2Path))).
 		SetTitleColor(ColorTitle).
 		SetBorderColor(ColorBorder).
 		SetBackgroundColor(ColorBackground)
@@ -329,4 +373,119 @@ func (a *App) compareSelectedFiles() {
 	
 	// Adicionar à página e mostrar
 	a.pages.AddAndSwitchToPage("compare", textView, true)
+}
+
+// copySelectedFiles copia os arquivos selecionados para a área de transferência
+func (a *App) copySelectedFiles() {
+	// Verificar se há arquivos selecionados
+	if len(a.selectedFiles) == 0 {
+		a.showMessage("Nenhum arquivo selecionado")
+		return
+	}
+	
+	// Definir operação como cópia
+	a.clipboard = "copy"
+	
+	// Atualizar barra de status
+	a.statusBar.SetStatus(fmt.Sprintf("%d arquivos copiados para a área de transferência", len(a.selectedFiles)))
+}
+
+// cutSelectedFiles recorta os arquivos selecionados para a área de transferência
+func (a *App) cutSelectedFiles() {
+	// Verificar se há arquivos selecionados
+	if len(a.selectedFiles) == 0 {
+		a.showMessage("Nenhum arquivo selecionado")
+		return
+	}
+	
+	// Definir operação como recorte
+	a.clipboard = "cut"
+	
+	// Atualizar barra de status
+	a.statusBar.SetStatus(fmt.Sprintf("%d arquivos recortados para a área de transferência", len(a.selectedFiles)))
+}
+
+// pasteFiles cola os arquivos da área de transferência
+func (a *App) pasteFiles() {
+	// Verificar se há arquivos na área de transferência
+	if a.clipboard == "" {
+		a.showMessage("Área de transferência vazia")
+		return
+	}
+	
+	// Verificar se há arquivos selecionados
+	if len(a.selectedFiles) == 0 {
+		a.showMessage("Nenhum arquivo selecionado para colar")
+		return
+	}
+	
+	// Implementar operação de colar
+	operation := a.clipboard
+	a.clipboard = ""
+	
+	// Contar arquivos processados
+	processed := 0
+	
+	// Processar cada arquivo selecionado
+	for filePath := range a.selectedFiles {
+		// Obter nome do arquivo
+		fileName := filepath.Base(filePath)
+		
+		// Definir caminho de destino
+		destPath := filepath.Join(a.currentDir, fileName)
+		
+		// Verificar se o arquivo já existe no destino
+		if _, err := os.Stat(destPath); err == nil {
+			// Perguntar se deseja sobrescrever
+			overwrite := a.showConfirmDialog(fmt.Sprintf("O arquivo %s já existe. Sobrescrever?", fileName))
+			if !overwrite {
+				continue
+			}
+		}
+		
+		// Copiar arquivo
+		if err := a.copyFile(filePath, destPath); err != nil {
+			a.showError(fmt.Sprintf("Erro ao copiar %s: %s", fileName, err))
+			continue
+		}
+		
+		// Se for recorte, excluir o original
+		if operation == "cut" {
+			if err := os.Remove(filePath); err != nil {
+				a.showError(fmt.Sprintf("Erro ao excluir %s: %s", fileName, err))
+			}
+		}
+		
+		processed++
+	}
+	
+	// Limpar seleção
+	a.selectedFiles = make(map[string]bool)
+	
+	// Atualizar visualização
+	a.updateFileList()
+	
+	// Atualizar barra de status
+	a.statusBar.SetStatus(fmt.Sprintf("%d arquivos processados", processed))
+}
+
+// copyFile copia um arquivo de origem para destino
+func (a *App) copyFile(src, dst string) error {
+	// Abrir arquivo de origem
+	sourceFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer sourceFile.Close()
+	
+	// Criar arquivo de destino
+	destFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+	
+	// Copiar conteúdo
+	_, err = destFile.ReadFrom(sourceFile)
+	return err
 }

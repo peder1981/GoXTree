@@ -58,7 +58,7 @@ func (hv *HelpView) Close() {
 
 // getHelpText retorna o texto de ajuda formatado
 func (hv *HelpView) getHelpText() string {
-	return `[yellow]GoXTree - Gerenciador de Arquivos Retrô[white]
+	return `[yellow]GoXTree - Gerenciador de Arquivos[white]
 
 [yellow]Navegação:[white]
   [green]Setas[white]        - Mover cursor
@@ -84,44 +84,64 @@ func (hv *HelpView) getHelpText() string {
   [green]Ctrl+G[white]       - Ir para diretório
   [green]Ctrl+H[white]       - Alternar arquivos ocultos
   [green]Ctrl+R[white]       - Atualizar visualização
-  [green]Ctrl+S[white]       - Selecionar/desmarcar arquivo atual
-  [green]Ctrl+C[white]       - Comparar arquivos selecionados
-  [green]Ctrl+V[white]       - Visualizar arquivo
-  [green]Ctrl+E[white]       - Editar arquivo
-  [green]Ctrl+Y[white]       - Sincronizar diretórios
-  [green]Ctrl+I[white]       - Informações do sistema
+  [green]Ctrl+T[white]       - Alternar temas
+  [green]Ctrl+C[white]       - Copiar arquivos selecionados
+  [green]Ctrl+X[white]       - Recortar arquivos selecionados
+  [green]Ctrl+V[white]       - Colar arquivos
+  [green]Ctrl+Q[white]       - Sair
+
+[yellow]Atalhos Alt+Letra:[white]
+  [green]Alt+S[white]        - Alternar ordem de classificação
+  [green]Alt+V[white]        - Visualizar arquivo
+  [green]Alt+E[white]        - Editar arquivo
+  [green]Alt+I[white]        - Informações do arquivo
+  [green]Alt+C[white]        - Comparar arquivos selecionados
 
 [yellow]Seleção de Arquivos:[white]
-  - Use [green]Ctrl+S[white] para selecionar/desmarcar o arquivo atual
+  - Use a [green]Barra de Espaço[white] para selecionar/desmarcar o arquivo atual e mover para o próximo
   - Use [green]Ctrl+A[white] para selecionar todos os arquivos
   - Use [green]Ctrl+D[white] para desmarcar todos os arquivos
-  - Os arquivos selecionados são destacados em [cyan]ciano[white] com fundo azul escuro
-  - Use [green]Ctrl+C[white] para comparar dois arquivos selecionados
+  - Os arquivos selecionados são destacados com cores distintas
+  - Use [green]Alt+C[white] para comparar dois arquivos selecionados
 
-[yellow]Tema Retrô:[white]
-  - O GoXTree usa um tema retrô inspirado nos gerenciadores de arquivos DOS
-  - Diferentes tipos de arquivos são destacados com cores distintas:
-    * [blue]Diretórios[white] - Azul
-    * [green]Executáveis[white] - Verde
-    * [magenta]Arquivos compactados[white] - Magenta
-    * [cyan]Arquivos de código[white] - Ciano
-    * [red]Imagens e PDFs[white] - Vermelho
-    * [yellow]Apresentações[white] - Amarelo
-    * [white]Arquivos de texto[white] - Branco
-    * [gray]Arquivos ocultos[white] - Cinza
+[yellow]Temas Disponíveis:[white]
+  - [green]Retrô[white]: Tema clássico inspirado nos gerenciadores de arquivos DOS
+  - [green]Moderno[white]: Tema moderno com ícones Unicode
+  - [green]Escuro[white]: Tema escuro para ambientes com pouca luz
+  - [green]Claro[white]: Tema claro para ambientes bem iluminados
+  - Use [green]Ctrl+T[white] para abrir o seletor de temas
+
+[yellow]Cores dos Arquivos:[white]
+  Diferentes tipos de arquivos são destacados com cores distintas:
+  * [blue]Diretórios[white] - Azul
+  * [green]Executáveis[white] - Verde
+  * [magenta]Arquivos compactados[white] - Magenta
+  * [cyan]Arquivos de código[white] - Ciano
+  * [red]Imagens e PDFs[white] - Vermelho
+  * [yellow]Apresentações[white] - Amarelo
+  * [white]Arquivos de texto[white] - Branco
+  * [gray]Arquivos ocultos[white] - Cinza
 
 [yellow]Visualização e Edição:[white]
-  - Use [green]Ctrl+V[white] para visualizar o conteúdo do arquivo atual
-  - Use [green]Ctrl+E[white] para editar o arquivo atual no editor interno
+  - Use [green]Alt+V[white] para visualizar o conteúdo do arquivo atual
+  - Use [green]Alt+E[white] para editar o arquivo atual no editor interno
   - Use [green]ESC[white] para sair do visualizador/editor
 
 [yellow]Comparação de Arquivos:[white]
-  - Selecione exatamente dois arquivos usando [green]Ctrl+S[white]
-  - Pressione [green]Ctrl+C[white] para comparar os arquivos
+  - Selecione exatamente dois arquivos
+  - Pressione [green]Alt+C[white] para comparar os arquivos
   - As diferenças são destacadas em cores:
     * [green]+ Texto adicionado[white]
     * [red]- Texto removido[white]
     * Texto sem alteração
+
+[yellow]Configuração:[white]
+  - As configurações são salvas em ~/.gxtree/config.json
+  - Você pode personalizar:
+    * Tema (retro, modern, dark, light)
+    * Exibição de arquivos ocultos
+    * Atalhos de teclado personalizados
+    * Esquema de cores
 
 [yellow]Sobre o GoXTree:[white]
   GoXTree é um gerenciador de arquivos moderno inspirado no XTree Gold,
