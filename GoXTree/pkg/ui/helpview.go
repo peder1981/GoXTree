@@ -58,45 +58,78 @@ func (hv *HelpView) Close() {
 
 // getHelpText retorna o texto de ajuda formatado
 func (hv *HelpView) getHelpText() string {
-	return `[yellow]GoXTree v1.0.0 - Ajuda[white]
+	return `[yellow]GoXTree - Gerenciador de Arquivos Retrô[white]
 
-[green]== Navegação ==[white]
-[yellow]↑/↓[white] - Mover seleção para cima/baixo
-[yellow]←/→[white] - Alternar entre painéis
-[yellow]Enter[white] - Abrir diretório ou arquivo
-[yellow]Backspace[white] - Ir para o diretório pai
-[yellow]Tab[white] - Alternar entre árvore e lista de arquivos
+[yellow]Navegação:[white]
+  [green]Setas[white]        - Mover cursor
+  [green]Enter[white]        - Entrar no diretório / Abrir arquivo
+  [green]Backspace[white]    - Voltar ao diretório pai
+  [green]Tab[white]          - Alternar entre árvore e lista de arquivos
+  [green]ESC[white]          - Voltar / Fechar janela atual
 
-[green]== Teclas de Função ==[white]
-[yellow]F1[white] - Exibir esta ajuda
-[yellow]F2[white] - Abrir menu
-[yellow]F3[white] - Visualizar arquivo
-[yellow]F4[white] - Editar arquivo
-[yellow]F5[white] - Copiar arquivo(s)
-[yellow]F6[white] - Mover arquivo(s)
-[yellow]F7[white] - Criar diretório
-[yellow]F8[white] - Excluir arquivo(s)
-[yellow]F9[white] - Comprimir arquivo(s)
-[yellow]F10[white] - Sair
+[yellow]Teclas de Função:[white]
+  [green]F1[white]           - Mostrar ajuda
+  [green]F2[white]           - Renomear arquivo/diretório
+  [green]F3[white]           - Buscar arquivos
+  [green]F4[white]           - Busca avançada
+  [green]F7[white]           - Criar diretório
+  [green]F8[white]           - Excluir arquivo/diretório
+  [green]F9[white]           - Sincronizar diretórios
+  [green]F10[white]          - Sair
 
-[green]== Atalhos ==[white]
-[yellow]Ctrl+A[white] - Selecionar todos os arquivos
-[yellow]Ctrl+F[white] - Buscar arquivos
-[yellow]Ctrl+G[white] - Ir para diretório
-[yellow]Ctrl+H[white] - Mostrar/ocultar arquivos ocultos
-[yellow]Ctrl+R[white] - Atualizar visualização
-[yellow]Espaço[white] - Selecionar/desselecionar arquivo
-[yellow]Esc[white] - Cancelar operação atual
+[yellow]Atalhos Ctrl+Letra:[white]
+  [green]Ctrl+A[white]       - Selecionar todos os arquivos
+  [green]Ctrl+D[white]       - Desmarcar todos os arquivos
+  [green]Ctrl+F[white]       - Buscar arquivo
+  [green]Ctrl+G[white]       - Ir para diretório
+  [green]Ctrl+H[white]       - Alternar arquivos ocultos
+  [green]Ctrl+R[white]       - Atualizar visualização
+  [green]Ctrl+S[white]       - Selecionar/desmarcar arquivo atual
+  [green]Ctrl+C[white]       - Comparar arquivos selecionados
+  [green]Ctrl+V[white]       - Visualizar arquivo
+  [green]Ctrl+E[white]       - Editar arquivo
+  [green]Ctrl+Y[white]       - Sincronizar diretórios
+  [green]Ctrl+I[white]       - Informações do sistema
 
-[green]== Modos de Visualização ==[white]
-- Árvore: Exibe a estrutura de diretórios em formato de árvore
-- Lista: Exibe arquivos e diretórios em formato de lista
-- Detalhes: Exibe arquivos com informações detalhadas
+[yellow]Seleção de Arquivos:[white]
+  - Use [green]Ctrl+S[white] para selecionar/desmarcar o arquivo atual
+  - Use [green]Ctrl+A[white] para selecionar todos os arquivos
+  - Use [green]Ctrl+D[white] para desmarcar todos os arquivos
+  - Os arquivos selecionados são destacados em [cyan]ciano[white] com fundo azul escuro
+  - Use [green]Ctrl+C[white] para comparar dois arquivos selecionados
 
-[green]== Sobre o GoXTree ==[white]
-GoXTree é uma reimplementação moderna do XTree Gold, um popular gerenciador de arquivos da era DOS. Desenvolvido em Go, o GoXTree combina a simplicidade e eficiência do XTree original com recursos modernos.
+[yellow]Tema Retrô:[white]
+  - O GoXTree usa um tema retrô inspirado nos gerenciadores de arquivos DOS
+  - Diferentes tipos de arquivos são destacados com cores distintas:
+    * [blue]Diretórios[white] - Azul
+    * [green]Executáveis[white] - Verde
+    * [magenta]Arquivos compactados[white] - Magenta
+    * [cyan]Arquivos de código[white] - Ciano
+    * [red]Imagens e PDFs[white] - Vermelho
+    * [yellow]Apresentações[white] - Amarelo
+    * [white]Arquivos de texto[white] - Branco
+    * [gray]Arquivos ocultos[white] - Cinza
 
-[yellow]Pressione ESC ou F1 para fechar esta ajuda[white]`
+[yellow]Visualização e Edição:[white]
+  - Use [green]Ctrl+V[white] para visualizar o conteúdo do arquivo atual
+  - Use [green]Ctrl+E[white] para editar o arquivo atual no editor interno
+  - Use [green]ESC[white] para sair do visualizador/editor
+
+[yellow]Comparação de Arquivos:[white]
+  - Selecione exatamente dois arquivos usando [green]Ctrl+S[white]
+  - Pressione [green]Ctrl+C[white] para comparar os arquivos
+  - As diferenças são destacadas em cores:
+    * [green]+ Texto adicionado[white]
+    * [red]- Texto removido[white]
+    * Texto sem alteração
+
+[yellow]Sobre o GoXTree:[white]
+  GoXTree é um gerenciador de arquivos moderno inspirado no XTree Gold,
+  implementado em Go com interface de terminal usando as bibliotecas
+  tcell e tview. Ele combina a simplicidade e eficiência dos gerenciadores
+  de arquivos clássicos com recursos modernos.
+
+Pressione [green]ESC[white] para fechar esta ajuda.`
 }
 
 // showHelp exibe a ajuda

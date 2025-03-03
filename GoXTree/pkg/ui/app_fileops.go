@@ -187,7 +187,7 @@ func (a *App) showToolsMenu() {
 	
 	menu.AddItem("Sincronizar Diretórios", "Sincroniza dois diretórios", 's', func() {
 		a.pages.RemovePage("toolsMenu")
-		a.showSyncDialog()
+		a.syncDirectoriesDialog()
 	})
 	
 	menu.AddItem("Voltar", "Volta ao gerenciador de arquivos", 'v', func() {
@@ -461,4 +461,94 @@ func (a *App) getSelectedFile() string {
 // refreshCurrentDir atualiza a visualização do diretório atual
 func (a *App) refreshCurrentDir() {
 	a.navigateTo(a.currentDir)
+}
+
+// syncDirectoriesDialog exibe o diálogo para sincronizar diretórios
+func (a *App) syncDirectoriesDialog() {
+	// Criar formulário
+	form := tview.NewForm()
+	
+	// Adicionar campos
+	form.AddInputField("Diretório de origem:", a.currentDir, 40, nil, nil)
+	form.AddInputField("Diretório de destino:", "", 40, nil, nil)
+	
+	// Adicionar opções
+	form.AddCheckbox("Excluir arquivos órfãos no destino", false, nil)
+	form.AddCheckbox("Sobrescrever arquivos mais novos", true, nil)
+	form.AddCheckbox("Pular arquivos existentes", false, nil)
+	form.AddCheckbox("Incluir arquivos ocultos", a.showHidden, nil)
+	form.AddCheckbox("Apenas visualizar (não realizar alterações)", false, nil)
+	
+	// Adicionar botões
+	form.AddButton("Sincronizar", func() {
+		// Obter valores dos campos
+		sourceDir := form.GetFormItem(0).(*tview.InputField).GetText()
+		targetDir := form.GetFormItem(1).(*tview.InputField).GetText()
+		deleteOrphans := form.GetFormItem(2).(*tview.Checkbox).IsChecked()
+		overwriteNewer := form.GetFormItem(3).(*tview.Checkbox).IsChecked()
+		skipExisting := form.GetFormItem(4).(*tview.Checkbox).IsChecked()
+		includeHidden := form.GetFormItem(5).(*tview.Checkbox).IsChecked()
+		previewOnly := form.GetFormItem(6).(*tview.Checkbox).IsChecked()
+		
+		// Verificar se os diretórios são válidos
+		if sourceDir == "" || targetDir == "" {
+			a.showError("Os diretórios de origem e destino são obrigatórios")
+			return
+		}
+		
+		// Expandir caminhos
+		if strings.HasPrefix(sourceDir, "~") {
+			homeDir, err := a.getHomeDir()
+			if err == nil {
+				sourceDir = filepath.Join(homeDir, sourceDir[1:])
+			}
+		}
+		
+		if strings.HasPrefix(targetDir, "~") {
+			homeDir, err := a.getHomeDir()
+			if err == nil {
+				targetDir = filepath.Join(homeDir, targetDir[1:])
+			}
+		}
+		
+		// Verificar se os diretórios existem
+		sourceStat, err := os.Stat(sourceDir)
+		if err != nil || !sourceStat.IsDir() {
+			a.showError(fmt.Sprintf("O diretório de origem '%s' não existe", sourceDir))
+			return
+		}
+		
+		targetStat, err := os.Stat(targetDir)
+		if err != nil || !targetStat.IsDir() {
+			a.showError(fmt.Sprintf("O diretório de destino '%s' não existe", targetDir))
+			return
+		}
+		
+		// Fechar o diálogo
+		a.pages.RemovePage("syncDialog")
+		
+		// Iniciar sincronização
+		a.syncDirectories(sourceDir, targetDir, deleteOrphans, overwriteNewer, skipExisting, includeHidden, previewOnly)
+	})
+	
+	form.AddButton("Cancelar", func() {
+		a.pages.RemovePage("syncDialog")
+	})
+	
+	// Configurar borda
+	form.SetBorder(true).
+		SetTitle(" Sincronizar Diretórios ").
+		SetTitleAlign(tview.AlignLeft)
+	
+	// Configurar manipulador de teclas
+	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			a.pages.RemovePage("syncDialog")
+			return nil
+		}
+		return event
+	})
+	
+	// Exibir diálogo
+	a.pages.AddPage("syncDialog", a.modal(form, 60, 15), true, true)
 }

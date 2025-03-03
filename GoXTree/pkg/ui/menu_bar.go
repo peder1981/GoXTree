@@ -36,7 +36,7 @@ func NewMenuBar(app *App) *MenuBar {
 // updateMenu atualiza o texto da barra de menu
 func (m *MenuBar) updateMenu() {
 	// Definir texto do menu
-	menuText := " F1:Ajuda | F2:Menu | F3:Visualizar | F4:Editar | F5:Copiar | F6:Mover | F7:Criar Dir | F8:Excluir | F9:Ferramentas | F10:Sair "
+	menuText := " F1:Ajuda | F2:Menu | F3:Buscar Simples | F4:Buscar Avançada | F5:Copiar | F6:Mover | F7:Criar Dir | F8:Excluir | F9:Sincronizar | F10:Sair "
 
 	// Configurar texto
 	m.menuBar.SetText(menuText)
@@ -52,10 +52,10 @@ func (m *MenuBar) handleMenuKey(key tcell.Key) bool {
 		m.app.showMainMenu()
 		return true
 	case tcell.KeyF3:
-		m.app.viewFile()
+		m.app.showSimpleSearchDialog()
 		return true
 	case tcell.KeyF4:
-		m.app.editFile()
+		m.app.showAdvancedSearchDialog()
 		return true
 	case tcell.KeyF5:
 		m.app.copyFile()
@@ -70,6 +70,9 @@ func (m *MenuBar) handleMenuKey(key tcell.Key) bool {
 		m.app.deleteFile()
 		return true
 	case tcell.KeyF9:
+		m.app.syncDirectoriesDialog()
+		return true
+	case tcell.KeyF10:
 		m.app.confirmExit()
 		return true
 	}
@@ -94,13 +97,14 @@ Teclas de Navegação:
 Teclas de Função:
   F1             - Ajuda
   F2             - Menu
-  F3             - Visualizar arquivo
-  F4             - Editar arquivo
+  F3             - Buscar Simples
+  F4             - Buscar Avançada
   F5             - Copiar arquivo/diretório
   F6             - Mover arquivo/diretório
   F7             - Criar arquivo/diretório
   F8             - Excluir arquivo/diretório
-  F9             - Sair
+  F9             - Sincronizar
+  F10            - Sair
 
 Outras Teclas:
   Ctrl+R         - Atualizar visualização

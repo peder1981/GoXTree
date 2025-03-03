@@ -786,3 +786,146 @@ func (a *App) showConfirmDialog(title, message string, callback func(confirmed b
 	a.pages.AddPage("confirmDialog", form, true, true)
 	a.app.SetFocus(form)
 }
+
+// showSimpleSearchDialog exibe o diálogo de busca simples
+func (a *App) showSimpleSearchDialog() {
+	// Criar formulário
+	form := tview.NewForm()
+	form.SetTitle("Busca Simples").
+		SetTitleAlign(tview.AlignCenter).
+		SetBorder(true)
+	
+	// Adicionar campo de busca
+	form.AddInputField("Buscar por:", "", 40, nil, nil)
+	
+	// Adicionar botões
+	form.AddButton("Buscar", func() {
+		// Obter padrão de busca
+		pattern := form.GetFormItem(0).(*tview.InputField).GetText()
+		if pattern == "" {
+			a.showError("Informe um padrão de busca")
+			return
+		}
+		
+		// Fechar diálogo
+		a.pages.RemovePage("simpleSearchDialog")
+		
+		// Realizar busca
+		a.performSearch(pattern, a.currentDir, true, false, false, "")
+	})
+	
+	form.AddButton("Cancelar", func() {
+		a.pages.RemovePage("simpleSearchDialog")
+	})
+	
+	// Configurar manipulador de teclas
+	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			a.pages.RemovePage("simpleSearchDialog")
+			return nil
+		}
+		return event
+	})
+	
+	// Exibir diálogo
+	a.pages.AddPage("simpleSearchDialog", a.modal(form, 50, 7), true, true)
+}
+
+// showAdvancedSearchDialog exibe o diálogo de busca avançada
+func (a *App) showAdvancedSearchDialog() {
+	// Criar formulário
+	form := tview.NewForm()
+	form.SetTitle("Busca Avançada").
+		SetTitleAlign(tview.AlignCenter).
+		SetBorder(true)
+	
+	// Adicionar campos
+	form.AddInputField("Buscar por:", "", 40, nil, nil)
+	form.AddInputField("Diretório:", a.currentDir, 40, nil, nil)
+	form.AddDropDown("Tipo de arquivo:", []string{"Todos", "Documentos", "Imagens", "Vídeos", "Áudio", "Compactados", "Código", "Personalizado"}, 0, nil)
+	form.AddInputField("Extensão personalizada:", "", 20, nil, nil)
+	
+	// Adicionar opções
+	form.AddCheckbox("Buscar em subdiretórios", true, nil)
+	form.AddCheckbox("Diferenciar maiúsculas/minúsculas", false, nil)
+	form.AddCheckbox("Buscar no conteúdo dos arquivos", false, nil)
+	
+	// Adicionar botões
+	form.AddButton("Buscar", func() {
+		// Obter valores dos campos
+		pattern := form.GetFormItem(0).(*tview.InputField).GetText()
+		searchDir := form.GetFormItem(1).(*tview.InputField).GetText()
+		fileTypeIndex, _ := form.GetFormItem(2).(*tview.DropDown).GetCurrentOption()
+		customExt := form.GetFormItem(3).(*tview.InputField).GetText()
+		recursive := form.GetFormItem(4).(*tview.Checkbox).IsChecked()
+		matchCase := form.GetFormItem(5).(*tview.Checkbox).IsChecked()
+		searchContent := form.GetFormItem(6).(*tview.Checkbox).IsChecked()
+		
+		// Validar campos
+		if pattern == "" {
+			a.showError("Informe um padrão de busca")
+			return
+		}
+		
+		if searchDir == "" {
+			a.showError("Informe um diretório de busca")
+			return
+		}
+		
+		// Expandir caminho
+		if strings.HasPrefix(searchDir, "~") {
+			homeDir, err := os.UserHomeDir()
+			if err == nil {
+				searchDir = filepath.Join(homeDir, searchDir[1:])
+			}
+		}
+		
+		// Verificar se o diretório existe
+		fileInfo, err := os.Stat(searchDir)
+		if err != nil || !fileInfo.IsDir() {
+			a.showError(fmt.Sprintf("O diretório '%s' não existe", searchDir))
+			return
+		}
+		
+		// Determinar tipo de arquivo
+		var fileType string
+		switch fileTypeIndex {
+		case 1: // Documentos
+			fileType = ".doc,.docx,.pdf,.txt,.rtf,.odt"
+		case 2: // Imagens
+			fileType = ".jpg,.jpeg,.png,.gif,.bmp,.tiff,.svg"
+		case 3: // Vídeos
+			fileType = ".mp4,.avi,.mkv,.mov,.wmv,.flv"
+		case 4: // Áudio
+			fileType = ".mp3,.wav,.ogg,.flac,.aac"
+		case 5: // Compactados
+			fileType = ".zip,.rar,.7z,.tar,.gz"
+		case 6: // Código
+			fileType = ".go,.c,.cpp,.h,.py,.js,.html,.css,.java"
+		case 7: // Personalizado
+			fileType = customExt
+		}
+		
+		// Fechar diálogo
+		a.pages.RemovePage("advancedSearchDialog")
+		
+		// Realizar busca
+		a.performSearch(pattern, searchDir, recursive, matchCase, searchContent, fileType)
+	})
+	
+	form.AddButton("Cancelar", func() {
+		a.pages.RemovePage("advancedSearchDialog")
+	})
+	
+	// Configurar manipulador de teclas
+	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			a.pages.RemovePage("advancedSearchDialog")
+			return nil
+		}
+		return event
+	})
+	
+	// Exibir diálogo
+	a.pages.AddPage("advancedSearchDialog", a.modal(form, 60, 15), true, true)
+}

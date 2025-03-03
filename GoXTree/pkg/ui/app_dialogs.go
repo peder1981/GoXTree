@@ -22,7 +22,7 @@ Teclas de Navegação:
 
 Teclas de Função:
   F1  - Ajuda
-  F2  - Renomear arquivo
+  F2  - Menu principal
   F3  - Busca simples
   F4  - Busca avançada
   F5  - Copiar arquivo
@@ -30,8 +30,7 @@ Teclas de Função:
   F7  - Criar diretório
   F8  - Excluir arquivo
   F9  - Sincronizar diretórios
-  F10 - Menu principal
-  ESC - Sair
+  F10 - Sair
 
 Teclas de Controle:
   Ctrl+F - Buscar arquivo
@@ -49,6 +48,10 @@ Teclas de Controle:
 Visualização em Árvore:
   + ou > - Expandir nó
   - ou < - Colapsar nó
+
+Comportamento da tecla ESC:
+  - Na tela principal: Volta ao diretório anterior ou pergunta se deseja sair
+  - Em diálogos: Fecha o diálogo atual e volta à tela anterior
 `
 
 	// Criar texto

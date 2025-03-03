@@ -20,6 +20,7 @@ type FileView struct {
 	files      []string
 	showHidden bool
 	itemCount  int
+	selectedFiles []string
 }
 
 // NewFileView cria uma nova visualização de arquivos
@@ -48,6 +49,7 @@ func NewFileView(app *App) *FileView {
 		files:      make([]string, 0),
 		showHidden: false,
 		itemCount:  0,
+		selectedFiles: make([]string, 0),
 	}
 
 	// Configurar manipulador de seleção
@@ -209,10 +211,19 @@ func (f *FileView) UpdateFileList(files []utils.FileInfo, showHidden bool) {
 	for i, file := range visibleFiles {
 		row := i + 2 // +2 para o cabeçalho e o diretório pai
 
-		// Nome
+		// Determinar se é um arquivo oculto
+		isHidden := strings.HasPrefix(file.Name, ".")
+
+		// Verificar se o arquivo está selecionado
+		isSelected := f.IsFileSelected(file.Name)
+
+		// Nome com cor baseada no tipo de arquivo
 		nameCell := tview.NewTableCell(file.Name)
-		if file.IsDir {
-			nameCell.SetTextColor(tcell.ColorBlue)
+		if isSelected {
+			nameCell.SetTextColor(ColorSelected)
+			nameCell.SetBackgroundColor(tcell.ColorDarkBlue)
+		} else {
+			nameCell.SetTextColor(GetFileColor(file.Name, file.IsDir, isHidden))
 		}
 		f.fileList.SetCell(row, 0, nameCell)
 
@@ -276,6 +287,15 @@ func (f *FileView) SelectFile(fileName string) bool {
 	for i, file := range f.files {
 		if file == fileName {
 			f.fileList.Select(i+1, 0)
+			return true
+		}
+	}
+	return false
+}
+
+func (f *FileView) IsFileSelected(name string) bool {
+	for _, selected := range f.selectedFiles {
+		if selected == name {
 			return true
 		}
 	}

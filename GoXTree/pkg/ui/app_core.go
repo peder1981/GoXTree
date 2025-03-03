@@ -74,14 +74,18 @@ func NewApp() *App {
 	app.statusBar = NewStatusBar()
 	app.menuBar = NewMenuBar(app)
 
+	// Aplicar tema retrô
+	ApplyRetroThemeToApp(app)
+
 	// Configurar layout principal como vertical (Row)
 	app.mainLayout.SetDirection(tview.FlexRow)
 
 	// Criar barra de função para exibir as opções
 	functionBar := tview.NewTextView().
 		SetDynamicColors(true).
-		SetText("[blue]F1[white]-Ajuda [blue]F2[white]-Renomear [blue]F7[white]-Criar Dir [blue]F8[white]-Excluir [blue]F10[white]-Sair [blue]Tab[white]-Alternar Painel [blue]ESC[white]-Voltar").
-		SetTextAlign(tview.AlignCenter)
+		SetText("[yellow]F1[white]-Ajuda [yellow]F2[white]-Renomear [yellow]F3[white]-Busca [yellow]F4[white]-Busca Av. [yellow]F7[white]-Criar Dir [yellow]F8[white]-Excluir [yellow]F9[white]-Sincronizar [yellow]F10[white]-Sair").
+		SetTextAlign(tview.AlignCenter).
+		SetBackgroundColor(ColorBackground)
 
 	// Adicionar menu bar ao topo
 	app.mainLayout.AddItem(app.menuBar.menuBar, 1, 0, false)
@@ -107,7 +111,7 @@ func NewApp() *App {
 	app.app.SetRoot(app.pages, true)
 
 	// Configurar manipuladores de eventos
-	app.setupKeyBindings()
+	app.SetupKeyHandlers()
 
 	// Adicionar diretório inicial ao histórico
 	app.addToHistory(app.currentDir)
@@ -146,9 +150,120 @@ func (a *App) Run() error {
 	return a.app.SetRoot(a.pages, true).Run()
 }
 
-// setupKeyBindings configura os atalhos de teclado
-func (a *App) setupKeyBindings() {
-	a.app.SetInputCapture(a.handleKeyEvents)
+// SetupKeyHandlers configura os manipuladores de teclas
+func (a *App) SetupKeyHandlers() {
+	a.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		// Verificar se alguma tecla de função foi pressionada
+		switch event.Key() {
+		case tcell.KeyF1:
+			a.showHelp()
+			return nil
+		case tcell.KeyF2:
+			a.renameFile()
+			return nil
+		case tcell.KeyF3:
+			a.searchFiles()
+			return nil
+		case tcell.KeyF4:
+			a.advancedSearch()
+			return nil
+		case tcell.KeyF7:
+			a.createDirectory()
+			return nil
+		case tcell.KeyF8:
+			a.deleteFile()
+			return nil
+		case tcell.KeyF9:
+			a.syncDirectories()
+			return nil
+		case tcell.KeyF10:
+			a.app.Stop()
+			return nil
+		case tcell.KeyTab:
+			a.toggleFocus()
+			return nil
+		case tcell.KeyEscape:
+			// Comportamento do ESC depende do contexto
+			if a.pages.HasPage("help") {
+				a.pages.RemovePage("help")
+				return nil
+			} else if a.pages.HasPage("search") {
+				a.pages.RemovePage("search")
+				return nil
+			} else if a.pages.HasPage("advancedSearch") {
+				a.pages.RemovePage("advancedSearch")
+				return nil
+			} else if a.pages.HasPage("createDir") {
+				a.pages.RemovePage("createDir")
+				return nil
+			} else if a.pages.HasPage("rename") {
+				a.pages.RemovePage("rename")
+				return nil
+			} else if a.pages.HasPage("delete") {
+				a.pages.RemovePage("delete")
+				return nil
+			} else if a.pages.HasPage("sync") {
+				a.pages.RemovePage("sync")
+				return nil
+			} else if a.pages.HasPage("view") {
+				a.pages.RemovePage("view")
+				return nil
+			} else if a.pages.HasPage("edit") {
+				a.pages.RemovePage("edit")
+				return nil
+			} else if a.pages.HasPage("compare") {
+				a.pages.RemovePage("compare")
+				return nil
+			} else if a.pages.HasPage("sysinfo") {
+				a.pages.RemovePage("sysinfo")
+				return nil
+			}
+		}
+
+		// Verificar combinações de teclas Ctrl+letra
+		if event.Modifiers() == tcell.ModCtrl {
+			switch event.Rune() {
+			case 'a', 'A': // Ctrl+A: Selecionar todos os arquivos
+				a.selectAllFiles()
+				return nil
+			case 'd', 'D': // Ctrl+D: Desmarcar todos os arquivos
+				a.unselectAllFiles()
+				return nil
+			case 'f', 'F': // Ctrl+F: Buscar arquivo
+				a.searchFiles()
+				return nil
+			case 'g', 'G': // Ctrl+G: Ir para diretório
+				a.goToDirectory()
+				return nil
+			case 'h', 'H': // Ctrl+H: Alternar arquivos ocultos
+				a.toggleHiddenFiles()
+				return nil
+			case 'r', 'R': // Ctrl+R: Atualizar visualização
+				a.refreshView()
+				return nil
+			case 's', 'S': // Ctrl+S: Selecionar/desmarcar arquivo atual
+				a.toggleSelection()
+				return nil
+			case 'c', 'C': // Ctrl+C: Comparar arquivos selecionados
+				a.compareSelectedFiles()
+				return nil
+			case 'v', 'V': // Ctrl+V: Visualizar arquivo
+				a.viewCurrentFile()
+				return nil
+			case 'e', 'E': // Ctrl+E: Editar arquivo
+				a.editCurrentFile()
+				return nil
+			case 'y', 'Y': // Ctrl+Y: Sincronizar diretórios
+				a.syncDirectories()
+				return nil
+			case 'i', 'I': // Ctrl+I: Informações do sistema
+				a.showSystemInfo()
+				return nil
+			}
+		}
+
+		return event
+	})
 }
 
 // refreshStatus atualiza a barra de status
@@ -336,14 +451,67 @@ func (a *App) handleKeyEvents(event *tcell.EventKey) *tcell.EventKey {
 		a.confirmExit()
 		return nil
 	case tcell.KeyEscape:
-		// Comportamento universal do ESC
-		if len(a.history) > 1 && a.historyPos > 0 {
-			// Se há histórico, voltar para o diretório anterior
+		// Verificar se estamos na tela principal ou em uma tela de diálogo
+		if a.pages.HasPage("textDialog") || a.pages.HasPage("inputDialog") || 
+		   a.pages.HasPage("helpDialog") || a.pages.HasPage("menuDialog") || 
+		   a.pages.HasPage("gotoDialog") || a.pages.HasPage("input") {
+			// Se estamos em uma tela de diálogo, apenas fechar o diálogo
+			return event // Deixar o manipulador específico da página tratar o evento
+		} else if len(a.history) > 1 && a.historyPos > 0 {
+			// Se estamos na tela principal e há histórico, voltar para o diretório anterior
 			a.goBack()
 		} else {
-			// Se não há histórico, perguntar se deseja sair
+			// Se estamos na tela principal e não há histórico, perguntar se deseja sair
 			a.confirmExit()
 		}
+		return nil
+	case tcell.KeyCtrlA:
+		// Selecionar todos os arquivos
+		a.selectAllFiles()
+		return nil
+	case tcell.KeyCtrlD:
+		// Desmarcar todos os arquivos
+		a.unselectAllFiles()
+		return nil
+	case tcell.KeyCtrlF:
+		// Buscar arquivo
+		a.showSimpleSearchDialog()
+		return nil
+	case tcell.KeyCtrlG:
+		// Ir para diretório
+		a.showGotoDialog()
+		return nil
+	case tcell.KeyCtrlH:
+		// Mostrar/ocultar arquivos ocultos
+		a.toggleHidden()
+		return nil
+	case tcell.KeyCtrlR:
+		// Atualizar visualização
+		a.refreshView()
+		return nil
+	case tcell.KeyCtrlC:
+		// Comparar arquivos selecionados
+		a.compareSelectedFiles()
+		return nil
+	case tcell.KeyCtrlV:
+		// Visualizar arquivo
+		a.viewCurrentFile()
+		return nil
+	case tcell.KeyCtrlE:
+		// Editar arquivo
+		a.editCurrentFile()
+		return nil
+	case tcell.KeyCtrlY:
+		// Sincronizar diretórios
+		a.syncDirectoriesDialog()
+		return nil
+	case tcell.KeyCtrlS:
+		// Selecionar arquivo
+		a.toggleSelection()
+		return nil
+	case tcell.KeyCtrlI:
+		// Informações do sistema
+		a.showSystemInfo()
 		return nil
 	}
 
@@ -452,4 +620,111 @@ func (a *App) showMessage(message string) {
 
 	a.pages.AddPage("message", modal, true, true)
 	a.app.SetFocus(modal)
+}
+
+// refreshView atualiza a visualização
+func (a *App) refreshView() {
+	a.treeView.Refresh()
+	a.updateFileList()
+	a.statusBar.UpdateStatus(a.currentDir)
+}
+
+// updateFileList atualiza a lista de arquivos
+func (a *App) updateFileList() {
+	files, err := utils.ListFiles(a.currentDir)
+	if err != nil {
+		a.showError("Erro ao listar arquivos: " + err.Error())
+		return
+	}
+	a.fileView.UpdateFileList(files, a.showHidden)
+}
+
+// searchFiles abre o diálogo de busca de arquivos
+func (a *App) searchFiles() {
+	a.showMessage("Busca de arquivos não implementada")
+}
+
+// advancedSearch abre o diálogo de busca avançada
+func (a *App) advancedSearch() {
+	a.showMessage("Busca avançada não implementada")
+}
+
+// syncDirectories sincroniza dois diretórios
+func (a *App) syncDirectories() {
+	a.showMessage("Sincronização de diretórios não implementada")
+}
+
+// goToDirectory abre o diálogo para ir para um diretório específico
+func (a *App) goToDirectory() {
+	a.showMessage("Ir para diretório não implementado")
+}
+
+// toggleHiddenFiles alterna a exibição de arquivos ocultos
+func (a *App) toggleHiddenFiles() {
+	a.showHidden = !a.showHidden
+	a.updateFileList()
+	if a.showHidden {
+		a.statusBar.SetStatus("Arquivos ocultos: Visíveis")
+	} else {
+		a.statusBar.SetStatus("Arquivos ocultos: Ocultos")
+	}
+}
+
+// showSystemInfo exibe informações do sistema
+func (a *App) showSystemInfo() {
+	a.showMessage("Informações do sistema não implementadas")
+}
+
+// renameFile abre o diálogo para renomear um arquivo
+func (a *App) renameFile() {
+	a.showMessage("Renomear arquivo não implementado")
+}
+
+// createDirectory abre o diálogo para criar um diretório
+func (a *App) createDirectory() {
+	a.showMessage("Criar diretório não implementado")
+}
+
+// deleteFile abre o diálogo para excluir um arquivo
+func (a *App) deleteFile() {
+	a.showMessage("Excluir arquivo não implementado")
+}
+
+// toggleFocus alterna o foco entre a árvore e a lista de arquivos
+func (a *App) toggleFocus() {
+	if a.app.GetFocus() == a.treeView.TreeView {
+		a.app.SetFocus(a.fileView.fileList)
+	} else {
+		a.app.SetFocus(a.treeView.TreeView)
+	}
+}
+
+// showMessage exibe uma mensagem na barra de status
+func (a *App) showMessage(msg string) {
+	a.statusBar.SetStatus(msg)
+}
+
+// showError exibe uma mensagem de erro na barra de status
+func (a *App) showError(msg string) {
+	a.statusBar.SetError(msg)
+}
+
+// showHelp exibe a tela de ajuda
+func (a *App) showHelp() {
+	helpView := NewHelpView(a)
+	a.pages.AddAndSwitchToPage("help", helpView.helpView, true)
+}
+
+// addToHistory adiciona um diretório ao histórico
+func (a *App) addToHistory(dir string) {
+	// Se já estamos no final do histórico, adicionar novo item
+	if a.historyPos == len(a.history)-1 {
+		a.history = append(a.history, dir)
+		a.historyPos = len(a.history) - 1
+	} else {
+		// Se não estamos no final, truncar o histórico e adicionar novo item
+		a.history = a.history[:a.historyPos+1]
+		a.history = append(a.history, dir)
+		a.historyPos = len(a.history) - 1
+	}
 }
