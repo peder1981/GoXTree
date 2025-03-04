@@ -104,6 +104,11 @@ func (o *Optimizer) Optimize(code string) string {
 
 // removeComments remove comentários do código
 func (o *Optimizer) removeComments(code string) string {
+	// Se a opção de remover comentários não estiver ativada, retornar o código original
+	if !o.options.RemoveComments {
+		return code
+	}
+
 	// Manter comentários de documentação (/*/{Protheus.doc} ... /*/)
 	docCommentRegex := regexp.MustCompile(`(?s)/\*/\{Protheus\.doc\}.*?/\*/`)
 	docComments := docCommentRegex.FindAllString(code, -1)
@@ -115,8 +120,12 @@ func (o *Optimizer) removeComments(code string) string {
 	}
 
 	// Remover comentários de linha (//)
-	lineCommentRegex := regexp.MustCompile(`//.*$`)
-	code = lineCommentRegex.ReplaceAllString(code, "")
+	lineCommentRegex := regexp.MustCompile(`//.*`)
+	lines := strings.Split(code, "\n")
+	for i, line := range lines {
+		lines[i] = lineCommentRegex.ReplaceAllString(line, "")
+	}
+	code = strings.Join(lines, "\n")
 
 	// Remover comentários de bloco (/* ... */)
 	blockCommentRegex := regexp.MustCompile(`(?s)/\*.*?\*/`)

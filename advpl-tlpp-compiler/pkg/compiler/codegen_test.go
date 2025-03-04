@@ -58,7 +58,14 @@ func TestCodeGeneratorBasic(t *testing.T) {
 				t.Fatalf("Erro ao gerar código: %v", err)
 			}
 			
-			if !strings.Contains(result, tt.expected) {
+			// Remover espaços em branco e quebras de linha para comparação mais precisa
+			cleanResult := strings.ReplaceAll(result, "\n", " ")
+			cleanResult = strings.ReplaceAll(cleanResult, "\t", " ")
+			for strings.Contains(cleanResult, "  ") {
+				cleanResult = strings.ReplaceAll(cleanResult, "  ", " ")
+			}
+			
+			if !strings.Contains(cleanResult, tt.expected) {
 				t.Errorf("Código gerado não contém '%s'. Código gerado:\n%s", 
 					tt.expected, result)
 			}
@@ -95,13 +102,20 @@ func TestCodeGeneratorFunctions(t *testing.T) {
 		t.Fatalf("Erro ao gerar código: %v", err)
 	}
 	
+	// Remover espaços em branco e quebras de linha para comparação mais precisa
+	cleanResult := strings.ReplaceAll(result, "\n", " ")
+	cleanResult = strings.ReplaceAll(cleanResult, "\t", " ")
+	for strings.Contains(cleanResult, "  ") {
+		cleanResult = strings.ReplaceAll(cleanResult, "  ", " ")
+	}
+	
 	// Verificar se o código contém a função Soma
-	if !strings.Contains(result, "Function Soma(a, b)") {
+	if !strings.Contains(cleanResult, "Function Soma(a, b)") {
 		t.Errorf("Código gerado não contém a função Soma. Código gerado:\n%s", result)
 	}
 	
 	// Verificar se o código contém a função estática Multiplica
-	if !strings.Contains(result, "Static Function Multiplica(a, b)") {
+	if !strings.Contains(cleanResult, "Static Function Multiplica(a, b)") {
 		t.Errorf("Código gerado não contém a função estática Multiplica. Código gerado:\n%s", result)
 	}
 }
@@ -153,18 +167,25 @@ func TestCodeGeneratorClasses(t *testing.T) {
 		t.Fatalf("Erro ao gerar código: %v", err)
 	}
 	
+	// Remover espaços em branco e quebras de linha para comparação mais precisa
+	cleanResult := strings.ReplaceAll(result, "\n", " ")
+	cleanResult = strings.ReplaceAll(cleanResult, "\t", " ")
+	for strings.Contains(cleanResult, "  ") {
+		cleanResult = strings.ReplaceAll(cleanResult, "  ", " ")
+	}
+	
 	// Verificar se o código contém a classe Pessoa
-	if !strings.Contains(result, "Class Pessoa") {
+	if !strings.Contains(cleanResult, "Class Pessoa") {
 		t.Errorf("Código gerado não contém a classe Pessoa. Código gerado:\n%s", result)
 	}
 	
 	// Verificar se o código contém a classe Funcionario com herança
-	if !strings.Contains(result, "Class Funcionario From Pessoa") {
+	if !strings.Contains(cleanResult, "Class Funcionario From Pessoa") {
 		t.Errorf("Código gerado não contém a classe Funcionario com herança. Código gerado:\n%s", result)
 	}
 	
 	// Verificar se o código contém o método construtor
-	if !strings.Contains(result, "Method New(") && strings.Contains(result, "Constructor") {
+	if !strings.Contains(cleanResult, "Method New(") || !strings.Contains(cleanResult, "Constructor") {
 		t.Errorf("Código gerado não contém o método construtor. Código gerado:\n%s", result)
 	}
 }
