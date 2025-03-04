@@ -1,3 +1,13 @@
+package parser
+
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/peder1981/advpl-tlpp-compiler/pkg/ast"
+	"github.com/peder1981/advpl-tlpp-compiler/pkg/lexer"
+)
+
 // parseIdentifier analisa um identificador
 func (p *Parser) parseIdentifier() ast.Expression {
 	return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
