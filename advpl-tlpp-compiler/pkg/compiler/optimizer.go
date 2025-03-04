@@ -315,16 +315,13 @@ func (o *Optimizer) inlineSimpleFunctions(code string) string {
 			code = funcDefRegex.ReplaceAllString(code, "")
 			
 			// Substituir chamadas da função pelo seu valor de retorno
-			for _, usage := range funcUsages {
-				callParams := usage[1]
-				
+			for _ = range funcUsages {
 				// Substituição simples para funções sem parâmetros
 				if funcParams == "" {
 					callRegex := regexp.MustCompile(fmt.Sprintf(`%s\s*\(\s*\)`, regexp.QuoteMeta(funcName)))
 					code = callRegex.ReplaceAllString(code, funcReturn)
-				}
-				// Para funções com um único parâmetro, fazer substituição direta
-				else if !strings.Contains(funcParams, ",") {
+				} else if !strings.Contains(funcParams, ",") {
+					// Para funções com um único parâmetro, fazer substituição direta
 					paramName := strings.TrimSpace(funcParams)
 					callRegex := regexp.MustCompile(fmt.Sprintf(`%s\s*\(\s*(.*?)\s*\)`, regexp.QuoteMeta(funcName)))
 					code = callRegex.ReplaceAllStringFunc(code, func(match string) string {

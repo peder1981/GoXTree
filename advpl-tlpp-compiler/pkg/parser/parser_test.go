@@ -1,10 +1,11 @@
 package parser
 
 import (
+	"fmt"
 	"testing"
 
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/ast"
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/lexer"
+	"advpl-tlpp-compiler/pkg/ast"
+	"advpl-tlpp-compiler/pkg/lexer"
 )
 
 func TestFunctionStatements(t *testing.T) {

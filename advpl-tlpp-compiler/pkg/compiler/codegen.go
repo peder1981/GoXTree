@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/ast"
+	"advpl-tlpp-compiler/pkg/ast"
 )
 
 // CodeGenerator é responsável por gerar código objeto a partir da AST

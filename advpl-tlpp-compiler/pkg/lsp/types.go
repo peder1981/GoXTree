@@ -155,3 +155,9 @@ type Diagnostic struct {
 	Source   string `json:"source,omitempty"`
 	Message  string `json:"message"`
 }
+
+// PublishDiagnosticsParams representa os parâmetros para publicar diagnósticos
+type PublishDiagnosticsParams struct {
+	URI         string       `json:"uri"`
+	Diagnostics []Diagnostic `json:"diagnostics"`
+}

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/ast"
+	"advpl-tlpp-compiler/pkg/ast"
 )
 
 // SymbolKind representa o tipo de símbolo
@@ -139,10 +139,15 @@ func (ide *IDEIntegration) processFunctionStatement(stmt *ast.FunctionStatement)
 		Kind:        SymbolKindFunction,
 		Line:        line,
 		Column:      column,
-		EndLine:     stmt.EndToken.Line,
-		EndColumn:   stmt.EndToken.Column,
+		EndLine:     stmt.Token.Line + 5, // Estimativa para o fim da função
+		EndColumn:   column + 10,
 		FilePath:    ide.filePath,
-		Description: fmt.Sprintf("%s função %s", if stmt.Static { "Static" } else { "" }, name),
+		Description: fmt.Sprintf("%s função %s", func() string {
+			if stmt.Static {
+				return "Static"
+			}
+			return ""
+		}(), name),
 		IsStatic:    stmt.Static,
 		IsPublic:    !stmt.Static,
 	}
@@ -177,8 +182,8 @@ func (ide *IDEIntegration) processClassStatement(stmt *ast.ClassStatement) {
 		Kind:        SymbolKindClass,
 		Line:        line,
 		Column:      column,
-		EndLine:     stmt.EndToken.Line,
-		EndColumn:   stmt.EndToken.Column,
+		EndLine:     stmt.Token.Line + 10, // Estimativa para o fim da classe
+		EndColumn:   column + 10,
 		FilePath:    ide.filePath,
 		Description: fmt.Sprintf("Classe %s", name),
 		IsPublic:    true,
@@ -221,8 +226,8 @@ func (ide *IDEIntegration) processMethodStatement(stmt *ast.MethodStatement) {
 		Kind:        SymbolKindMethod,
 		Line:        line,
 		Column:      column,
-		EndLine:     stmt.EndToken.Line,
-		EndColumn:   stmt.EndToken.Column,
+		EndLine:     stmt.Token.Line + 5, // Estimativa para o fim do método
+		EndColumn:   column + 10,
 		FilePath:    ide.filePath,
 		Description: fmt.Sprintf("Método %s da classe %s", name, className),
 		Parent:      className,

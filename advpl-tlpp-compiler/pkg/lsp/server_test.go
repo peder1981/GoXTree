@@ -1,11 +1,12 @@
 package lsp
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/ast"
+	"advpl-tlpp-compiler/pkg/ast"
+	"advpl-tlpp-compiler/pkg/compiler"
+	"advpl-tlpp-compiler/pkg/parser"
 )
 
 func TestInitialize(t *testing.T) {

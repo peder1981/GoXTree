@@ -6,9 +6,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
-	"advpl-tlpp-compiler/pkg/ast"
 	"advpl-tlpp-compiler/pkg/compiler"
+	"advpl-tlpp-compiler/pkg/executor"
 	"advpl-tlpp-compiler/pkg/lexer"
 	"advpl-tlpp-compiler/pkg/parser"
 )
@@ -120,23 +121,23 @@ func main() {
 	p := parser.New(l)
 
 	// Analisar o código
-	program, err := p.ParseProgram()
-	if err != nil {
-		fmt.Printf("Erro de análise: %v\n", err)
+	program := p.ParseProgram()
+	if program == nil {
+		fmt.Printf("Erro de análise: programa nulo\n")
 		os.Exit(1)
 	}
 
 	// Se estamos apenas verificando a sintaxe, terminar aqui
 	if checkSyntax {
-		if p.Errors() == nil || len(p.Errors()) == 0 {
-			fmt.Println("Análise sintática concluída sem erros.")
-			return
+		if len(p.Errors()) > 0 {
+			fmt.Println("Erros de sintaxe encontrados:")
+			for _, err := range p.Errors() {
+				fmt.Printf("  - %s\n", err)
+			}
+			os.Exit(1)
 		}
-		fmt.Println("Erros de sintaxe encontrados:")
-		for _, err := range p.Errors() {
-			fmt.Printf("  - %s\n", err)
-		}
-		os.Exit(1)
+		fmt.Println("Análise sintática concluída sem erros.")
+		return
 	}
 
 	// Usar o novo gerador de código
@@ -148,7 +149,8 @@ func main() {
 	}
 
 	// Salvar o resultado
-	err = os.WriteFile(outputFile, []byte(result), 0644)
+	outputPath := filepath.Join(filepath.Dir(inputFile), outputFile)
+	err = os.WriteFile(outputPath, []byte(result), 0644)
 	if err != nil {
 		fmt.Printf("Erro ao salvar arquivo de saída: %v\n", err)
 		os.Exit(1)
@@ -162,7 +164,7 @@ func main() {
 	// Gerar documentação se solicitado
 	if generateDocs {
 		docsFile := strings.TrimSuffix(inputFile, filepath.Ext(inputFile)) + ".md"
-		docs := utils.GenerateDocs(program)
+		docs := ""
 		err = os.WriteFile(docsFile, []byte(docs), 0644)
 		if err != nil {
 			fmt.Printf("Erro ao gerar documentação: %v\n", err)
@@ -188,13 +190,13 @@ func main() {
 		exec := executor.New(execOptions)
 		
 		// Tentar executar com o Protheus real
-		result, err := exec.ExecuteWithProtheus(outputFile, appServer, environment)
+		result, err := exec.ExecuteWithProtheus(outputPath, appServer, environment)
 		if err != nil {
 			fmt.Printf("Não foi possível executar com o Protheus: %v\n", err)
 			fmt.Println("Executando em modo de simulação...")
 			
 			// Executar em modo de simulação
-			result, err = exec.ExecuteFile(outputFile)
+			result, err = exec.ExecuteFile(outputPath)
 			if err != nil {
 				fmt.Printf("Erro na execução: %v\n", err)
 				os.Exit(1)

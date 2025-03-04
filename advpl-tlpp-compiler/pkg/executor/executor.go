@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/ast"
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/compiler"
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/lexer"
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/parser"
+	"advpl-tlpp-compiler/pkg/ast"
+	"advpl-tlpp-compiler/pkg/compiler"
+	"advpl-tlpp-compiler/pkg/lexer"
+	"advpl-tlpp-compiler/pkg/parser"
 )
 
 // ExecutionOptions representa as opções para execução
@@ -58,7 +58,7 @@ func New(options ExecutionOptions) *Executor {
 // ExecuteString compila e executa um código fonte AdvPL/TLPP
 func (e *Executor) ExecuteString(source string) (*ExecutionResult, error) {
 	// Criar lexer
-	l := lexer.New(source)
+	l := lexer.New(source, "")
 
 	// Criar parser
 	p := parser.New(l)
@@ -79,13 +79,13 @@ func (e *Executor) ExecuteString(source string) (*ExecutionResult, error) {
 // ExecuteFile compila e executa um arquivo AdvPL/TLPP
 func (e *Executor) ExecuteFile(filePath string) (*ExecutionResult, error) {
 	// Ler o arquivo
-	source, err := ioutil.ReadFile(filePath)
+	code, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao ler o arquivo: %v", err)
 	}
 
 	// Criar lexer
-	l := lexer.New(string(source))
+	l := lexer.New(string(code), filePath)
 
 	// Criar parser
 	p := parser.New(l)

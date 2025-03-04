@@ -9,6 +9,13 @@ import (
 	"advpl-tlpp-compiler/pkg/parser"
 )
 
+// parseProgram analisa um programa para testes semânticos
+func parseProgram(input string) *ast.Program {
+	l := lexer.New(input, "test.prw")
+	p := parser.New(l)
+	return p.ParseProgram()
+}
+
 func TestSemanticAnalyzerBasic(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -77,7 +84,7 @@ func TestSemanticAnalyzerBasic(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			program := parseProgram(tt.input)
-			analyzer := NewSemanticAnalyzer()
+			analyzer := NewSemanticAnalyzer("test.prw")
 			errors := analyzer.Analyze(program)
 			
 			if tt.expectErrors && len(errors) == 0 {
@@ -167,7 +174,7 @@ func TestSemanticAnalyzerTypeChecking(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			program := parseProgram(tt.input)
-			analyzer := NewSemanticAnalyzer()
+			analyzer := NewSemanticAnalyzer("test.prw")
 			errors := analyzer.Analyze(program)
 			
 			if tt.expectErrors && len(errors) == 0 {
@@ -248,7 +255,7 @@ func TestSemanticAnalyzerScopeChecking(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			program := parseProgram(tt.input)
-			analyzer := NewSemanticAnalyzer()
+			analyzer := NewSemanticAnalyzer("test.prw")
 			errors := analyzer.Analyze(program)
 			
 			if tt.expectErrors && len(errors) == 0 {
@@ -348,7 +355,7 @@ func TestSemanticAnalyzerClassChecking(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			program := parseProgram(tt.input)
-			analyzer := NewSemanticAnalyzer()
+			analyzer := NewSemanticAnalyzer("test.prw")
 			errors := analyzer.Analyze(program)
 			
 			if tt.expectErrors && len(errors) == 0 {

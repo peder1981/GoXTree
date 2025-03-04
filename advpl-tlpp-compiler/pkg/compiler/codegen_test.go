@@ -9,9 +9,9 @@ import (
 	"advpl-tlpp-compiler/pkg/parser"
 )
 
-// Função auxiliar para analisar o código-fonte e retornar um programa AST
-func parseProgram(input string) *ast.Program {
-	l := lexer.New(input)
+// parseCodegenTestProgram analisa um programa para testes de geração de código
+func parseCodegenTestProgram(input string) *ast.Program {
+	l := lexer.New(input, "test.prw")
 	p := parser.New(l)
 	return p.ParseProgram()
 }
@@ -41,7 +41,7 @@ func TestCodeGeneratorBasic(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			program := parseProgram(tt.input)
+			program := parseCodegenTestProgram(tt.input)
 			options := Options{
 				Verbose:      false,
 				Optimize:     false,
@@ -78,7 +78,7 @@ func TestCodeGeneratorFunctions(t *testing.T) {
 	EndFunction
 	`
 
-	program := parseProgram(input)
+	program := parseCodegenTestProgram(input)
 	options := Options{
 		Verbose:      false,
 		Optimize:     false,
@@ -136,7 +136,7 @@ func TestCodeGeneratorClasses(t *testing.T) {
 	EndClass
 	`
 
-	program := parseProgram(input)
+	program := parseCodegenTestProgram(input)
 	options := Options{
 		Verbose:      false,
 		Optimize:     false,
@@ -194,7 +194,7 @@ func TestCodeGeneratorControlStructures(t *testing.T) {
 	EndFunction
 	`
 
-	program := parseProgram(input)
+	program := parseCodegenTestProgram(input)
 	options := Options{
 		Verbose:      false,
 		Optimize:     false,
@@ -238,7 +238,7 @@ func TestCodeGeneratorWithOptimization(t *testing.T) {
 	EndFunction
 	`
 
-	program := parseProgram(input)
+	program := parseCodegenTestProgram(input)
 	
 	// Teste sem otimização
 	optionsNoOpt := Options{
@@ -290,7 +290,7 @@ func TestCodeGeneratorDialects(t *testing.T) {
 	EndFunction
 	`
 
-	program := parseProgram(input)
+	program := parseCodegenTestProgram(input)
 	
 	// Teste com dialeto AdvPL
 	optionsAdvPL := Options{

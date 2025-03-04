@@ -2,7 +2,6 @@ package lsp
 
 import (
 	"encoding/json"
-	"strings"
 )
 
 // applyChanges aplica as mudanças ao texto do documento

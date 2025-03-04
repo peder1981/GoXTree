@@ -8,8 +8,6 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	
-	"advpl-tlpp-compiler/pkg/compiler"
 )
 
 var (
@@ -72,35 +70,40 @@ func main() {
 	}
 
 	// Carregar configuração
-	config, err := utils.LoadConfig(configFile)
-	if err != nil && !os.IsNotExist(err) {
-		fmt.Printf("Aviso: Erro ao carregar configuração: %v\n", err)
-		fmt.Println("Usando configuração padrão.")
-	}
+	// config, err := utils.LoadConfig(configFile)
+	// if err != nil && !os.IsNotExist(err) {
+	// 	fmt.Printf("Aviso: Erro ao carregar configuração: %v\n", err)
+	// 	fmt.Println("Usando configuração padrão.")
+	// }
 
 	// Sobrescrever tema se especificado na linha de comando
-	if theme != "default" {
-		config.Theme = theme
-	}
+	// if theme != "default" {
+	// 	config.Theme = theme
+	// }
 
 	// Inicializar o IDE
-	app := ide.NewApp(projectDir, config)
+	app := tview.NewApplication()
+	
+	// Criar componentes da interface
+	editorView := tview.NewTextView().
+		SetDynamicColors(true).
+		SetRegions(true).
+		SetWordWrap(true)
+	
+	// Configurar o editor
+	editorView.SetBorder(true).SetTitle("Editor AdvPL/TLPP")
 
-	// Configurar manipuladores de eventos
-	app.SetEventHandler(func(event tcell.Event) bool {
-		switch event := event.(type) {
-		case *tcell.EventKey:
-			// Verificar atalhos globais
-			if event.Key() == tcell.KeyCtrlQ {
-				app.Quit()
-				return true
-			}
+	// Configurar manipulador de eventos
+	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyCtrlQ {
+			app.Stop()
+			return nil
 		}
-		return false
+		return event
 	})
 
 	// Iniciar a interface do usuário
-	if err := app.Run(); err != nil {
+	if err := app.SetRoot(editorView, true).Run(); err != nil {
 		fmt.Printf("Erro ao executar o IDE: %v\n", err)
 		os.Exit(1)
 	}

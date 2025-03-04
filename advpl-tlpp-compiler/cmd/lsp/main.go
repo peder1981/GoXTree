@@ -1,11 +1,15 @@
 package main
 
 import (
-	"flag"
+	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"os"
-	"os/signal"
-	"syscall"
+	"path/filepath"
+	"runtime"
+	"strings"
 
 	"advpl-tlpp-compiler/pkg/lsp"
 )

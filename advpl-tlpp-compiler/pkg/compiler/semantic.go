@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/ast"
+	"advpl-tlpp-compiler/pkg/ast"
 )
 
 // SemanticError representa um erro semântico

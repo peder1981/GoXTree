@@ -3,7 +3,6 @@ package compiler
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"advpl-tlpp-compiler/pkg/ast"
 )
@@ -90,17 +89,10 @@ func (c *Compiler) compileFunctionStatement(stmt *ast.FunctionStatement) error {
 
 	// Gerar cabeçalho da função
 	if stmt.Static {
-		c.writeLine("Static Function %s(", stmt.Name.Value)
+		c.writeLine("Static Function %s(%s)", stmt.Name.Value, strings.Join(getParameterNames(stmt.Parameters), ", "))
 	} else {
-		c.writeLine("Function %s(", stmt.Name.Value)
+		c.writeLine("Function %s(%s)", stmt.Name.Value, strings.Join(getParameterNames(stmt.Parameters), ", "))
 	}
-
-	// Gerar parâmetros
-	params := make([]string, len(stmt.Parameters))
-	for i, param := range stmt.Parameters {
-		params[i] = param.Value
-	}
-	c.writeLine("%s)", strings.Join(params, ", "))
 
 	// Gerar corpo da função
 	c.indent++
@@ -109,17 +101,26 @@ func (c *Compiler) compileFunctionStatement(stmt *ast.FunctionStatement) error {
 	}
 	c.indent--
 
-	c.writeLine("Return")
+	c.writeLine("EndFunction")
 	c.writeLine("")
 
 	return nil
+}
+
+// getParameterNames extrai os nomes dos parâmetros
+func getParameterNames(params []*ast.Identifier) []string {
+	result := make([]string, len(params))
+	for i, param := range params {
+		result[i] = param.Value
+	}
+	return result
 }
 
 // compileClassStatement compila uma declaração de classe
 func (c *Compiler) compileClassStatement(stmt *ast.ClassStatement) error {
 	// Gerar cabeçalho da classe
 	if stmt.Parent != nil {
-		c.writeLine("Class %s From %s", stmt.Name.Value, stmt.Parent.Value)
+		c.writeLine("Class %s Extends %s", stmt.Name.Value, stmt.Parent.Value)
 	} else {
 		c.writeLine("Class %s", stmt.Name.Value)
 	}
@@ -150,14 +151,17 @@ func (c *Compiler) compileMethodStatement(stmt *ast.MethodStatement) error {
 	c.stats.FunctionCount++
 
 	// Gerar cabeçalho do método
-	c.writeLine("Method %s(", stmt.Name.Value)
-
-	// Gerar parâmetros
-	params := make([]string, len(stmt.Parameters))
-	for i, param := range stmt.Parameters {
-		params[i] = param.Value
+	if stmt.Constructor {
+		c.writeLine("Method %s(%s) Class %s Constructor", 
+			stmt.Name.Value, 
+			strings.Join(getParameterNames(stmt.Parameters), ", "), 
+			stmt.ClassName.Value)
+	} else {
+		c.writeLine("Method %s(%s) Class %s", 
+			stmt.Name.Value, 
+			strings.Join(getParameterNames(stmt.Parameters), ", "), 
+			stmt.ClassName.Value)
 	}
-	c.writeLine("%s) Class %s", strings.Join(params, ", "), "self")
 
 	// Gerar corpo do método
 	c.indent++
@@ -166,7 +170,7 @@ func (c *Compiler) compileMethodStatement(stmt *ast.MethodStatement) error {
 	}
 	c.indent--
 
-	c.writeLine("Return")
+	c.writeLine("EndMethod")
 	c.writeLine("")
 
 	return nil

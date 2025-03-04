@@ -3,8 +3,8 @@ package ast
 import (
 	"bytes"
 	"strings"
-
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/lexer"
+	
+	"advpl-tlpp-compiler/pkg/lexer"
 )
 
 // Node representa um nó na AST
@@ -509,6 +509,8 @@ type MethodStatement struct {
 	Name       *Identifier
 	Parameters []*Identifier
 	Body       *BlockStatement
+	Constructor bool
+	ClassName  *Identifier
 }
 
 func (ms *MethodStatement) statementNode() {}

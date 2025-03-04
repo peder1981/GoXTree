@@ -4,9 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/ast"
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/lexer"
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/parser"
+	"advpl-tlpp-compiler/pkg/ast"
+	"advpl-tlpp-compiler/pkg/lexer"
+	"advpl-tlpp-compiler/pkg/parser"
 )
 
 func TestCompileFunctionStatement(t *testing.T) {
@@ -43,7 +43,7 @@ func TestCompileFunctionStatement(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		program := parseProgram(tt.input)
+		program := parseCompilerTestProgram(tt.input)
 		compiler := New(program, Options{})
 		result, err := compiler.Compile()
 		
@@ -93,7 +93,7 @@ func TestCompileClassStatement(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		program := parseProgram(tt.input)
+		program := parseCompilerTestProgram(tt.input)
 		compiler := New(program, Options{})
 		result, err := compiler.Compile()
 		
@@ -136,7 +136,7 @@ func TestCompileVariableStatements(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		program := parseProgram(tt.input)
+		program := parseCompilerTestProgram(tt.input)
 		compiler := New(program, Options{})
 		result, err := compiler.Compile()
 		
@@ -185,7 +185,7 @@ func TestCompileControlStructures(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		program := parseProgram(tt.input)
+		program := parseCompilerTestProgram(tt.input)
 		compiler := New(program, Options{})
 		result, err := compiler.Compile()
 		
@@ -240,7 +240,7 @@ func TestCompileExpressions(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		program := parseProgram(tt.input)
+		program := parseCompilerTestProgram(tt.input)
 		compiler := New(program, Options{})
 		result, err := compiler.Compile()
 		
@@ -314,7 +314,7 @@ func TestCompileComplexProgram(t *testing.T) {
 	EndClass
 	`
 
-	program := parseProgram(input)
+	program := parseCompilerTestProgram(input)
 	compiler := New(program, Options{})
 	result, err := compiler.Compile()
 	
@@ -330,7 +330,8 @@ func TestCompileComplexProgram(t *testing.T) {
 
 // Funções auxiliares
 
-func parseProgram(input string) *ast.Program {
+// parseCompilerTestProgram analisa um programa para testes de compilação
+func parseCompilerTestProgram(input string) *ast.Program {
 	l := lexer.New(input, "test.prw")
 	p := parser.New(l)
 	return p.ParseProgram()

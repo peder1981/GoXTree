@@ -4,14 +4,13 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/ast"
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/lexer"
+	"advpl-tlpp-compiler/pkg/ast"
+	"advpl-tlpp-compiler/pkg/lexer"
 )
 
 // Precedências dos operadores
 const (
-	_ int = iota
-	LOWEST
+	LOWEST      = iota
 	EQUALS      // ==
 	LESSGREATER // > ou <
 	SUM         // +
@@ -27,13 +26,13 @@ var precedences = map[lexer.TokenType]int{
 	lexer.TOKEN_NOT_EQ: EQUALS,
 	lexer.TOKEN_LT:     LESSGREATER,
 	lexer.TOKEN_GT:     LESSGREATER,
-	lexer.TOKEN_LT_EQ:  LESSGREATER,
-	lexer.TOKEN_GT_EQ:  LESSGREATER,
+	lexer.TOKEN_LE:  LESSGREATER,
+	lexer.TOKEN_GE:  LESSGREATER,
 	lexer.TOKEN_PLUS:   SUM,
 	lexer.TOKEN_MINUS:  SUM,
-	lexer.TOKEN_MUL:    PRODUCT,
-	lexer.TOKEN_DIV:    PRODUCT,
-	lexer.TOKEN_MOD:    PRODUCT,
+	lexer.TOKEN_ASTERISK:    PRODUCT,
+	lexer.TOKEN_SLASH:    PRODUCT,
+	lexer.TOKEN_PERCENT:    PRODUCT,
 	lexer.TOKEN_LPAREN: CALL,
 	lexer.TOKEN_LBRACKET: INDEX,
 }
@@ -87,15 +86,15 @@ func New(l *lexer.Lexer) *Parser {
 	// Registra funções de parsing de infix
 	p.registerInfix(lexer.TOKEN_PLUS, p.parseInfixExpression)
 	p.registerInfix(lexer.TOKEN_MINUS, p.parseInfixExpression)
-	p.registerInfix(lexer.TOKEN_MUL, p.parseInfixExpression)
-	p.registerInfix(lexer.TOKEN_DIV, p.parseInfixExpression)
-	p.registerInfix(lexer.TOKEN_MOD, p.parseInfixExpression)
+	p.registerInfix(lexer.TOKEN_ASTERISK, p.parseInfixExpression)
+	p.registerInfix(lexer.TOKEN_SLASH, p.parseInfixExpression)
+	p.registerInfix(lexer.TOKEN_PERCENT, p.parseInfixExpression)
 	p.registerInfix(lexer.TOKEN_EQ, p.parseInfixExpression)
 	p.registerInfix(lexer.TOKEN_NOT_EQ, p.parseInfixExpression)
 	p.registerInfix(lexer.TOKEN_LT, p.parseInfixExpression)
 	p.registerInfix(lexer.TOKEN_GT, p.parseInfixExpression)
-	p.registerInfix(lexer.TOKEN_LT_EQ, p.parseInfixExpression)
-	p.registerInfix(lexer.TOKEN_GT_EQ, p.parseInfixExpression)
+	p.registerInfix(lexer.TOKEN_LE, p.parseInfixExpression)
+	p.registerInfix(lexer.TOKEN_GE, p.parseInfixExpression)
 	p.registerInfix(lexer.TOKEN_LPAREN, p.parseCallExpression)
 	p.registerInfix(lexer.TOKEN_LBRACKET, p.parseIndexExpression)
 
@@ -727,4 +726,17 @@ func (p *Parser) curPrecedence() int {
 func (p *Parser) noPrefixParseFnError(t lexer.TokenType) {
 	msg := fmt.Sprintf("nenhuma função de parse de prefixo para %s encontrada", t)
 	p.errors = append(p.errors, msg)
+}
+
+// ParseSource analisa o código fonte e retorna um programa AST
+func ParseSource(source string) (*ast.Program, error) {
+	l := lexer.New(source, "")
+	p := New(l)
+	program := p.ParseProgram()
+	
+	if len(p.Errors()) > 0 {
+		return program, fmt.Errorf("erro ao analisar o código: %v", p.Errors())
+	}
+	
+	return program, nil
 }
