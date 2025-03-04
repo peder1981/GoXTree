@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/ide"
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/ide/ui"
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/utils"
+	"github.com/rivo/tview"
+	
+	"advpl-tlpp-compiler/pkg/compiler"
 )
 
 var (

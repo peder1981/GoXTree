@@ -1,4 +1,4 @@
-module github.com/peder1981/advpl-tlpp-compiler
+module advpl-tlpp-compiler
 
 go 1.22
 

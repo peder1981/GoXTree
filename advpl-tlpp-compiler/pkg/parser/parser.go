@@ -8,6 +8,187 @@ import (
 	"github.com/peder1981/advpl-tlpp-compiler/pkg/lexer"
 )
 
+// Precedências dos operadores
+const (
+	_ int = iota
+	LOWEST
+	EQUALS      // ==
+	LESSGREATER // > ou <
+	SUM         // +
+	PRODUCT     // *
+	PREFIX      // -X ou !X
+	CALL        // myFunction(X)
+	INDEX       // array[index]
+)
+
+// Tabela de precedências
+var precedences = map[lexer.TokenType]int{
+	lexer.TOKEN_EQ:    EQUALS,
+	lexer.TOKEN_NOT_EQ: EQUALS,
+	lexer.TOKEN_LT:     LESSGREATER,
+	lexer.TOKEN_GT:     LESSGREATER,
+	lexer.TOKEN_LT_EQ:  LESSGREATER,
+	lexer.TOKEN_GT_EQ:  LESSGREATER,
+	lexer.TOKEN_PLUS:   SUM,
+	lexer.TOKEN_MINUS:  SUM,
+	lexer.TOKEN_MUL:    PRODUCT,
+	lexer.TOKEN_DIV:    PRODUCT,
+	lexer.TOKEN_MOD:    PRODUCT,
+	lexer.TOKEN_LPAREN: CALL,
+	lexer.TOKEN_LBRACKET: INDEX,
+}
+
+// Tipos de funções de parsing
+type (
+	prefixParseFn func() ast.Expression
+	infixParseFn  func(ast.Expression) ast.Expression
+)
+
+// Parser representa o analisador sintático
+type Parser struct {
+	l      *lexer.Lexer
+	errors []string
+
+	curToken  lexer.Token
+	peekToken lexer.Token
+
+	prefixParseFns map[lexer.TokenType]prefixParseFn
+	infixParseFns  map[lexer.TokenType]infixParseFn
+}
+
+// New cria um novo analisador sintático
+func New(l *lexer.Lexer) *Parser {
+	p := &Parser{
+		l:      l,
+		errors: []string{},
+	}
+
+	// Inicializa os mapas de funções de parsing
+	p.prefixParseFns = make(map[lexer.TokenType]prefixParseFn)
+	p.infixParseFns = make(map[lexer.TokenType]infixParseFn)
+
+	// Registra funções de parsing de prefixo
+	p.registerPrefix(lexer.TOKEN_IDENT, p.parseIdentifier)
+	p.registerPrefix(lexer.TOKEN_INT, p.parseIntegerLiteral)
+	p.registerPrefix(lexer.TOKEN_FLOAT, p.parseFloatLiteral)
+	p.registerPrefix(lexer.TOKEN_STRING, p.parseStringLiteral)
+	p.registerPrefix(lexer.TOKEN_DATE, p.parseDateLiteral)
+	p.registerPrefix(lexer.TOKEN_TRUE, p.parseBooleanLiteral)
+	p.registerPrefix(lexer.TOKEN_FALSE, p.parseBooleanLiteral)
+	p.registerPrefix(lexer.TOKEN_NIL, p.parseNilLiteral)
+	p.registerPrefix(lexer.TOKEN_LPAREN, p.parseGroupedExpression)
+	p.registerPrefix(lexer.TOKEN_BANG, p.parsePrefixExpression)
+	p.registerPrefix(lexer.TOKEN_MINUS, p.parsePrefixExpression)
+	p.registerPrefix(lexer.TOKEN_IF, p.parseIfExpression)
+	p.registerPrefix(lexer.TOKEN_WHILE, p.parseWhileExpression)
+	p.registerPrefix(lexer.TOKEN_FOR, p.parseForExpression)
+	p.registerPrefix(lexer.TOKEN_LBRACKET, p.parseArrayLiteral)
+
+	// Registra funções de parsing de infix
+	p.registerInfix(lexer.TOKEN_PLUS, p.parseInfixExpression)
+	p.registerInfix(lexer.TOKEN_MINUS, p.parseInfixExpression)
+	p.registerInfix(lexer.TOKEN_MUL, p.parseInfixExpression)
+	p.registerInfix(lexer.TOKEN_DIV, p.parseInfixExpression)
+	p.registerInfix(lexer.TOKEN_MOD, p.parseInfixExpression)
+	p.registerInfix(lexer.TOKEN_EQ, p.parseInfixExpression)
+	p.registerInfix(lexer.TOKEN_NOT_EQ, p.parseInfixExpression)
+	p.registerInfix(lexer.TOKEN_LT, p.parseInfixExpression)
+	p.registerInfix(lexer.TOKEN_GT, p.parseInfixExpression)
+	p.registerInfix(lexer.TOKEN_LT_EQ, p.parseInfixExpression)
+	p.registerInfix(lexer.TOKEN_GT_EQ, p.parseInfixExpression)
+	p.registerInfix(lexer.TOKEN_LPAREN, p.parseCallExpression)
+	p.registerInfix(lexer.TOKEN_LBRACKET, p.parseIndexExpression)
+
+	// Lê dois tokens para inicializar curToken e peekToken
+	p.nextToken()
+	p.nextToken()
+
+	return p
+}
+
+// Errors retorna os erros de parsing
+func (p *Parser) Errors() []string {
+	return p.errors
+}
+
+// nextToken avança para o próximo token
+func (p *Parser) nextToken() {
+	p.curToken = p.peekToken
+	p.peekToken = p.l.NextToken()
+}
+
+// curTokenIs verifica se o token atual é do tipo esperado
+func (p *Parser) curTokenIs(t lexer.TokenType) bool {
+	return p.curToken.Type == t
+}
+
+// peekTokenIs verifica se o próximo token é do tipo esperado
+func (p *Parser) peekTokenIs(t lexer.TokenType) bool {
+	return p.peekToken.Type == t
+}
+
+// expectPeek verifica se o próximo token é do tipo esperado e avança
+func (p *Parser) expectPeek(t lexer.TokenType) bool {
+	if p.peekTokenIs(t) {
+		p.nextToken()
+		return true
+	}
+	p.peekError(t)
+	return false
+}
+
+// peekError adiciona um erro quando o próximo token não é o esperado
+func (p *Parser) peekError(t lexer.TokenType) {
+	msg := fmt.Sprintf("esperava próximo token como %s, obteve %s", t, p.peekToken.Type)
+	p.errors = append(p.errors, msg)
+}
+
+// registerPrefix registra uma função de parsing de prefixo
+func (p *Parser) registerPrefix(tokenType lexer.TokenType, fn prefixParseFn) {
+	p.prefixParseFns[tokenType] = fn
+}
+
+// registerInfix registra uma função de parsing de infix
+func (p *Parser) registerInfix(tokenType lexer.TokenType, fn infixParseFn) {
+	p.infixParseFns[tokenType] = fn
+}
+
+// ParseProgram analisa o programa completo
+func (p *Parser) ParseProgram() *ast.Program {
+	program := &ast.Program{}
+	program.Statements = []ast.Statement{}
+
+	for !p.curTokenIs(lexer.TOKEN_EOF) {
+		stmt := p.parseStatement()
+		if stmt != nil {
+			program.Statements = append(program.Statements, stmt)
+		}
+		p.nextToken()
+	}
+
+	return program
+}
+
+// parseStatement analisa um statement
+func (p *Parser) parseStatement() ast.Statement {
+	switch p.curToken.Type {
+	case lexer.TOKEN_FUNCTION:
+		return p.parseFunctionStatement()
+	case lexer.TOKEN_CLASS:
+		return p.parseClassStatement()
+	case lexer.TOKEN_LOCAL:
+		return p.parseLocalStatement()
+	case lexer.TOKEN_PUBLIC:
+		return p.parsePublicStatement()
+	case lexer.TOKEN_PRIVATE:
+		return p.parsePrivateStatement()
+	case lexer.TOKEN_RETURN:
+		return p.parseReturnStatement()
+	default:
+		return p.parseExpressionStatement()
+	}
+}
+
 // parseIdentifier analisa um identificador
 func (p *Parser) parseIdentifier() ast.Expression {
 	return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}

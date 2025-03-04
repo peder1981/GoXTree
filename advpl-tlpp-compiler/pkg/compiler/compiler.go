@@ -3,8 +3,9 @@ package compiler
 import (
 	"fmt"
 	"strings"
+	"time"
 
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/ast"
+	"advpl-tlpp-compiler/pkg/ast"
 )
 
 // Options representa as opções de compilação

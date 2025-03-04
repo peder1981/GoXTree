@@ -1,17 +1,13 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
+	"flag"
 	"fmt"
-	"io"
-	"log"
 	"os"
-	"path/filepath"
-	"runtime"
-	"strings"
+	"os/signal"
+	"syscall"
 
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/lsp"
+	"advpl-tlpp-compiler/pkg/lsp"
 )
 
 // Constantes para os métodos LSP

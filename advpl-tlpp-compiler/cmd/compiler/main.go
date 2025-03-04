@@ -6,13 +6,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/compiler"
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/executor"
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/lexer"
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/parser"
-	"github.com/peder1981/advpl-tlpp-compiler/pkg/utils"
+	"advpl-tlpp-compiler/pkg/ast"
+	"advpl-tlpp-compiler/pkg/compiler"
+	"advpl-tlpp-compiler/pkg/lexer"
+	"advpl-tlpp-compiler/pkg/parser"
 )
 
 var (
