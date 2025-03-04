@@ -18,6 +18,8 @@ Este projeto consiste em dois componentes principais:
 - Otimização de código
 - Geração de código objeto compatível com o Protheus
 - Suporte a diferentes dialetos e versões das linguagens
+- Execução de código compilado (simulação ou integração com Protheus)
+- Geração automática de documentação
 
 ### IDE
 - Interface baseada em terminal (ASCII)
@@ -33,6 +35,7 @@ Este projeto consiste em dois componentes principais:
 
 - Go 1.22 ou superior
 - Terminal com suporte a cores e caracteres Unicode
+- Opcional: Protheus AppServer para execução de código real
 
 ## Instalação
 
@@ -49,6 +52,19 @@ go install github.com/peder1981/advpl-tlpp-compiler/cmd/ide@latest
 advpl-compiler arquivo.prw [opções]
 ```
 
+Opções disponíveis:
+- `-o arquivo.ppo`: Especifica o arquivo de saída
+- `-v`: Modo verboso
+- `-optimize`: Otimiza o código gerado
+- `-dialect [advpl|tlpp]`: Especifica o dialeto da linguagem
+- `-I diretório`: Adiciona um diretório de inclusão
+- `-check`: Apenas verifica a sintaxe sem gerar código
+- `-docs`: Gera documentação a partir dos comentários
+- `-run`: Executa o código após compilação
+- `-server servidor`: Especifica o servidor Protheus para execução
+- `-env ambiente`: Especifica o ambiente Protheus para execução
+- `-keep-temp`: Mantém arquivos temporários após execução
+
 ### IDE
 
 ```bash
@@ -64,13 +80,32 @@ advpl-tlpp-compiler/
 │   └── ide/          # Ponto de entrada do IDE
 ├── pkg/
 │   ├── ast/          # Estruturas de árvore sintática abstrata
-│   ├── compiler/     # Lógica de compilação
+│   ├── compiler/     # Lógica de compilação e geração de código
+│   ├── executor/     # Executor de código compilado
 │   ├── ide/          # Componentes do IDE
 │   ├── lexer/        # Analisador léxico
 │   ├── parser/       # Analisador sintático
 │   └── utils/        # Utilitários compartilhados
 └── examples/         # Exemplos de código AdvPL e TLPP
 ```
+
+## Pipeline de Compilação
+
+O processo de compilação segue as seguintes etapas:
+
+1. **Análise Léxica**: O código fonte é transformado em tokens pelo lexer.
+2. **Análise Sintática**: Os tokens são analisados pelo parser para criar uma Árvore Sintática Abstrata (AST).
+3. **Análise Semântica**: A AST é verificada quanto a erros semânticos e tipos.
+4. **Geração de Código**: A AST é transformada em código objeto pelo gerador de código.
+5. **Otimização** (opcional): O código gerado é otimizado para melhor desempenho.
+6. **Execução** (opcional): O código compilado pode ser executado diretamente.
+
+## Exemplos
+
+O diretório `examples/` contém exemplos de código AdvPL e TLPP que podem ser usados para testar o compilador:
+
+- `cliente.prw`: Implementação de uma classe de cliente com métodos para gerenciamento.
+- Outros exemplos serão adicionados no futuro.
 
 ## Licença
 

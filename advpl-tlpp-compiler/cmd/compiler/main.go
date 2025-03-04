@@ -6,8 +6,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/peder1981/advpl-tlpp-compiler/pkg/compiler"
+	"github.com/peder1981/advpl-tlpp-compiler/pkg/executor"
 	"github.com/peder1981/advpl-tlpp-compiler/pkg/lexer"
 	"github.com/peder1981/advpl-tlpp-compiler/pkg/parser"
 	"github.com/peder1981/advpl-tlpp-compiler/pkg/utils"
@@ -23,9 +25,13 @@ var (
 	showVersion  bool
 	checkSyntax  bool
 	generateDocs bool
+	runCode      bool
+	appServer    string
+	environment  string
+	keepTemp     bool
 )
 
-const version = "0.1.0"
+const version = "0.2.0"
 
 func init() {
 	flag.StringVar(&outputFile, "o", "", "Arquivo de saída (padrão: nome do arquivo de entrada com extensão .ppo)")
@@ -36,6 +42,10 @@ func init() {
 	flag.BoolVar(&showVersion, "version", false, "Mostrar versão do compilador")
 	flag.BoolVar(&checkSyntax, "check", false, "Apenas verificar sintaxe sem gerar código")
 	flag.BoolVar(&generateDocs, "docs", false, "Gerar documentação a partir dos comentários")
+	flag.BoolVar(&runCode, "run", false, "Executar o código após compilação")
+	flag.StringVar(&appServer, "server", "localhost", "Servidor do Protheus para execução")
+	flag.StringVar(&environment, "env", "ENVIRONMENT", "Ambiente do Protheus para execução")
+	flag.BoolVar(&keepTemp, "keep-temp", false, "Manter arquivos temporários após execução")
 
 	flag.Func("include", "Diretório de inclusão (pode ser especificado múltiplas vezes)", func(s string) error {
 		includeDirs = append(includeDirs, s)
@@ -131,11 +141,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Compilar o programa
-	c := compiler.New(program, compilerOptions)
-	result, err := c.Compile()
+	// Usar o novo gerador de código
+	codeGen := compiler.NewCodeGenerator(program, inputFile, compilerOptions)
+	result, err := codeGen.Generate()
 	if err != nil {
-		fmt.Printf("Erro de compilação: %v\n", err)
+		fmt.Printf("Erro na geração de código: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -148,11 +158,7 @@ func main() {
 
 	if verbose {
 		fmt.Printf("Compilação concluída com sucesso: %s\n", outputFile)
-		stats := c.GetStats()
-		fmt.Printf("Estatísticas:\n")
-		fmt.Printf("  - Funções: %d\n", stats.FunctionCount)
-		fmt.Printf("  - Variáveis: %d\n", stats.VariableCount)
-		fmt.Printf("  - Linhas de código: %d\n", stats.LineCount)
+		fmt.Printf("Tamanho do código gerado: %d bytes\n", len(result))
 	}
 
 	// Gerar documentação se solicitado
@@ -164,6 +170,53 @@ func main() {
 			fmt.Printf("Erro ao gerar documentação: %v\n", err)
 		} else if verbose {
 			fmt.Printf("Documentação gerada: %s\n", docsFile)
+		}
+	}
+
+	// Executar o código se solicitado
+	if runCode {
+		fmt.Println("Executando o código compilado...")
+		
+		// Configurar opções de execução
+		execOptions := executor.ExecutionOptions{
+			TempDir:       os.TempDir(),
+			KeepTempFiles: keepTemp,
+			Verbose:       verbose,
+			Timeout:       30 * time.Second,
+			Environment:   make(map[string]string),
+		}
+		
+		// Criar executor
+		exec := executor.New(execOptions)
+		
+		// Tentar executar com o Protheus real
+		result, err := exec.ExecuteWithProtheus(outputFile, appServer, environment)
+		if err != nil {
+			fmt.Printf("Não foi possível executar com o Protheus: %v\n", err)
+			fmt.Println("Executando em modo de simulação...")
+			
+			// Executar em modo de simulação
+			result, err = exec.ExecuteFile(outputFile)
+			if err != nil {
+				fmt.Printf("Erro na execução: %v\n", err)
+				os.Exit(1)
+			}
+		}
+		
+		// Mostrar resultado da execução
+		if result.Success {
+			fmt.Println("Execução concluída com sucesso!")
+			fmt.Printf("Tempo de execução: %v\n", result.Duration)
+			fmt.Println("Saída:")
+			fmt.Println(result.Output)
+		} else {
+			fmt.Println("Erro na execução:")
+			fmt.Println(result.ErrorMessage)
+			if result.Output != "" {
+				fmt.Println("Saída:")
+				fmt.Println(result.Output)
+			}
+			os.Exit(1)
 		}
 	}
 }
